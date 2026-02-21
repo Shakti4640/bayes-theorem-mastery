@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Problem 3: Multiple Evidence & Conditional Independence: The Spam Detector — Bayes' Theorem Complete Guide</title>
+    <link rel="icon" type="image/png" href="images/favicon.png">    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.75;
+            color: #1a202c;
+            background-color: #f7fafc;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            box-shadow: 0 0 30px rgba(0,0,0,0.08);
+            padding: 48px 52px;
+        }
+        
+        .content { max-width: 950px; margin: 0 auto; color: #1a202c; }
+        .content h1 {
+            color: #1a202c; margin: 32px 0 20px;
+            padding-bottom: 12px;
+            border-bottom: 4px solid #8b5cf6;
+            font-size: 2.1em;
+            font-weight: 700;
+        }
+        .content h2 {
+            color: #1a202c; margin: 28px 0 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #a78bfa;
+            font-size: 1.6em;
+            font-weight: 600;
+        }
+        .content h3 { color: #1a202c; margin: 22px 0 12px; font-size: 1.3em; font-weight: 600; }
+        .content h4 { color: #2d3748; margin: 18px 0 10px; font-size: 1.1em; font-weight: 600; }
+        .content p  { margin-bottom: 16px; line-height: 1.8; color: #1a202c; }
+        .content ul, .content ol { margin: 12px 0 18px 30px; color: #1a202c; }
+        .content li { margin-bottom: 8px; line-height: 1.75; color: #1a202c; }
+        .content hr { border: none; border-top: 2px solid #e2e8f0; margin: 26px 0; }
+        .content pre {
+            background: #f7fafc !important;
+            border: 1px solid #cbd5e0 !important;
+            border-left: 4px solid #8b5cf6 !important;
+            padding: 18px !important; overflow-x: auto; margin: 18px 0; border-radius: 6px;
+            font-family: 'Consolas','Monaco','Courier New',monospace !important;
+            font-size: 0.9em !important;
+        }
+        .content pre:not([style*="color"]) { color: #1a202c !important; }
+        .content code {
+            font-family: 'Consolas','Monaco','Courier New',monospace !important;
+            font-size: 0.88em !important;
+        }
+        .content code:not(pre code) {
+            background: #ede9fe !important;
+            color: #1a202c !important;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        .content pre code { background: transparent !important; padding: 0; }
+        .content table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .content th {
+            background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+            color: white; padding: 12px 16px; text-align: left;
+            font-weight: 600;
+        }
+        .content td { padding: 11px 16px; border: 1px solid #e2e8f0; color: #1a202c; }
+        .content tr:nth-child(even) td { background: #faf5ff; }
+        .content blockquote {
+            border-left: 4px solid #8b5cf6; background: #faf5ff;
+            padding: 14px 20px; margin: 18px 0; border-radius: 0 6px 6px 0;
+            color: #1a202c;
+        }
+        .content strong { color: #1a202c; font-weight: 600; }
+        .px-2 { padding: 0; }
+        .chat-message { background: transparent; padding: 0; margin: 0; }
+
+        /* Bottom nav bar only */
+        .nav-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 24px 0;
+            margin-top: 50px;
+            border-top: 3px solid #a78bfa;
+        }
+        .nav-button {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 12px 26px;
+            background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+            color: white !important; text-decoration: none;
+            border-radius: 8px; font-weight: 600; font-size: 0.95em;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(139,92,246,0.35);
+        }
+        .nav-button:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(139,92,246,0.5); }
+        .nav-button.disabled { background: #cbd5e1; box-shadow: none; pointer-events: none; }
+        .nav-button.home {
+            background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
+            box-shadow: 0 2px 8px rgba(99,102,241,0.35);
+        }
+        .nav-button.home:hover { box-shadow: 0 4px 14px rgba(99,102,241,0.5); }
+        .page-info { color: #718096; font-size: 0.9em; text-align: center; }
+
+        /* Progress bar */
+        #progress-track {
+            position: fixed; top: 20px; right: 20px;
+            width: 10px; height: 150px;
+            background: rgba(139,92,246,0.2);
+            border: 2px solid #8b5cf6;
+            border-radius: 6px; overflow: hidden; z-index: 1000;
+        }
+        #progress-fill {
+            width: 100%;
+            background: linear-gradient(180deg, #8b5cf6, #7c3aed);
+            height: 0%;
+            transition: height 0.15s ease;
+        }
+        #progress-pct {
+            position: fixed; top: 0px; right: 16px;
+            color: #7c3aed; font-size: 14px; font-weight: bold;
+            z-index: 1001;
+            text-shadow: 0 1px 2px rgba(255,255,255,0.9);
+            line-height: 20px;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="content">
+            <div class="chat-message" data-index="5">
+<div class="px-2"><h1>BAYES' THEOREM — PROBLEM 3 OF 10</h1>
+<h2>Multiple Evidence &amp; Conditional Independence: The Spam Detector</h2>
+<hr>
+<h2>🎯 DIFFICULTY: EASY (Building on Problems 1 &amp; 2)</h2>
+<hr>
+<h2>WHAT CHANGED FROM PREVIOUS PROBLEMS</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>Problem 1: 2 hypotheses, 1 evidence   → Binary Bayes
+</span>Problem 2: N hypotheses, 1 evidence   → Multi-Hypothesis Bayes
+Problem 3: 2 hypotheses, M evidences  → Multiple Evidence Bayes
+
+THE NEW CHALLENGE:
+    → Previously: ONE alarm, ONE test result
+    → Now: MULTIPLE features observed SIMULTANEOUSLY
+    → How do we handle P(E₁, E₂, E₃ | Hypothesis)?
+    → This joint likelihood is the NEW piece of machinery</code></pre></div>
+<hr>
+<h2>THE HYPOTHETICAL PROBLEM</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>You are building an email spam filter.
+</span>An email just arrived with THREE observable features:
+
+    Feature 1: Contains the word "FREE"          → Yes
+    Feature 2: Subject line is in ALL CAPS        → Yes  
+    Feature 3: Sender is in your contact list     → No
+
+From analyzing 10,000 past emails, you know:
+
+    ┌──────────────────────────────────────────────────────────────┐
+    │  Total emails analyzed:     10,000                          │
+    │  Spam emails:               2,000  (20%)                    │
+    │  Legitimate (Ham) emails:   8,000  (80%)                    │
+    ├──────────────────────────────────────────────────────────────┤
+    │                                                              │
+    │  AMONG SPAM EMAILS (2,000):                                 │
+    │      Contains "FREE":         70%  (1,400 emails)           │
+    │      ALL CAPS subject:        60%  (1,200 emails)           │
+    │      Sender in contacts:      5%   (100 emails)             │
+    │                                                              │
+    │  AMONG LEGITIMATE EMAILS (8,000):                           │
+    │      Contains "FREE":         10%  (800 emails)             │
+    │      ALL CAPS subject:        5%   (400 emails)             │
+    │      Sender in contacts:      80%  (6,400 emails)           │
+    │                                                              │
+    └──────────────────────────────────────────────────────────────┘
+
+QUESTION: Given all THREE features observed together,
+          what is the probability this email is SPAM?</code></pre></div>
+<hr>
+<h2>HOW TO APPROACH IT</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>Step 1 → Recognize: 2 hypotheses (Spam, Ham) — same as Problem 1 structure
+</span>Step 2 → Recognize: 3 pieces of evidence — NEW challenge
+Step 3 → Apply Bayes (as learned in Problems 1 &amp; 2):
+
+                     P(E₁,E₂,E₃ | Spam) × P(Spam)
+    P(Spam|E₁,E₂,E₃) = ─────────────────────────────────
+                                P(E₁,E₂,E₃)
+
+Step 4 → THE PROBLEM: What is P(E₁,E₂,E₃ | Spam)?
+         → This is the JOINT probability of ALL three features given Spam
+         → To compute this EXACTLY, we'd need data for every COMBINATION
+         → 3 binary features = 2³ = 8 combinations
+         → 10 binary features = 2¹⁰ = 1,024 combinations
+         → 50 binary features = 2⁵⁰ ≈ 1 QUADRILLION combinations
+         → WE WILL NEVER HAVE ENOUGH DATA FOR THIS
+
+Step 5 → THE SOLUTION: Assume CONDITIONAL INDEPENDENCE
+         → This is the "NAIVE" assumption
+         → It makes the impossible computation POSSIBLE</code></pre></div>
+<hr>
+<h2>THE INDEPENDENCE ASSUMPTION — THE CORE NEW CONCEPT</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>═══════════════════════════════════════════════════════════════
+</span>EXACT (INTRACTABLE) APPROACH:
+═══════════════════════════════════════════════════════════════
+
+P(E₁,E₂,E₃ | Spam) = One single number from a giant lookup table
+                     = Need to count emails that have ALL THREE
+                       features simultaneously among spam
+                     = Maybe 50 emails out of 2,000 have all three?
+                     = Unreliable estimate from small count
+
+PROBLEM:
+    → With M features, need 2ᴹ counts
+    → Most combinations have ZERO or very few examples
+    → Estimates are noisy and unreliable
+    → Called the "CURSE OF DIMENSIONALITY"
+
+
+═══════════════════════════════════════════════════════════════
+NAIVE (TRACTABLE) APPROACH:
+═══════════════════════════════════════════════════════════════
+
+ASSUME: Features are CONDITIONALLY INDEPENDENT given the class.
+
+MEANING: Once you KNOW an email is spam, knowing it contains "FREE"
+         tells you NOTHING EXTRA about whether it has ALL CAPS.
+
+MATHEMATICALLY:
+
+    P(E₁,E₂,E₃ | Spam) = P(E₁|Spam) × P(E₂|Spam) × P(E₃|Spam)
+
+    JOINT likelihood = PRODUCT of individual likelihoods
+
+THIS CHANGES EVERYTHING:
+    → Instead of 2ᴹ numbers, need only M numbers per class
+    → Instead of 8 counts, need only 3 counts per class
+    → Each individual P(Eᵢ|Class) is estimated from LOTS of data
+    → Reliable, stable, computable</code></pre></div>
+<hr>
+<h2>WHY "CONDITIONAL" INDEPENDENCE — NOT JUST "INDEPENDENCE"</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>THIS IS THE MOST MISUNDERSTOOD PART:
+</span>
+UNCONDITIONAL INDEPENDENCE:
+    → "FREE" and "ALL CAPS" are independent IN GENERAL
+    → This is probably FALSE
+    → Spammy emails tend to have BOTH features together
+
+CONDITIONAL INDEPENDENCE:
+    → "FREE" and "ALL CAPS" are independent GIVEN YOU KNOW IT'S SPAM
+    → AMONG spam emails, knowing "FREE" is present doesn't change
+      your estimate of whether "ALL CAPS" is present
+    → This is much more REASONABLE
+
+ANALOGY:
+    → Height and vocabulary size are CORRELATED in general
+      (both increase with age in children)
+    → But GIVEN a specific age, they are roughly independent
+    → Age is the "explaining away" variable — like Spam/Ham class
+
+VISUAL:
+
+    UNCONDITIONAL:          CONDITIONAL:
+    
+    "FREE" ←──→ "CAPS"     Spam → "FREE"
+    (correlated)            Spam → "CAPS"
+                            (independent given Spam)
+
+    The CLASS variable EXPLAINS the correlation.
+    Once you condition on it, the features become independent.</code></pre></div>
+<hr>
+<h2>THE FULL NAIVE BAYES FORMULA</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>FOR TWO CLASSES (Spam, Ham) AND M FEATURES:
+</span>
+                         P(Spam) × ∏ᵢ P(Eᵢ|Spam)
+P(Spam|E₁,...,Eₘ) = ───────────────────────────────────────────
+                     P(Spam)×∏ᵢP(Eᵢ|Spam) + P(Ham)×∏ᵢP(Eᵢ|Ham)
+
+WHERE:
+    ∏ᵢ means PRODUCT over all features i = 1 to M
+
+THIS IS JUST:
+    → Problem 1's formula (binary Bayes)
+    → With the likelihood replaced by a PRODUCT of individual likelihoods
+    → The denominator follows the same pattern from Problem 2</code></pre></div>
+<hr>
+<h2>LABELING EVERY KNOWN QUANTITY</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>PRIORS (from Problem 1 — same concept):
+</span>    P(Spam) = 2000/10000 = 0.20
+    P(Ham)  = 8000/10000 = 0.80
+
+INDIVIDUAL LIKELIHOODS:
+┌─────────────────────┬──────────────┬──────────────┐
+│  Feature            │ P(Eᵢ|Spam)  │ P(Eᵢ|Ham)   │
+├─────────────────────┼──────────────┼──────────────┤
+│ E₁: "FREE" present  │    0.70      │    0.10      │
+│ E₂: ALL CAPS        │    0.60      │    0.05      │
+│ E₃: In contacts     │    0.05      │    0.80      │
+└─────────────────────┴──────────────┴──────────────┘
+
+OBSERVED EVIDENCE FOR THIS EMAIL:
+    E₁ = Yes (contains "FREE")
+    E₂ = Yes (ALL CAPS)
+    E₃ = No  (sender NOT in contacts)
+
+THEREFORE WE USE:
+    For Spam: P(E₁=Yes|Spam) × P(E₂=Yes|Spam) × P(E₃=No|Spam)
+    For Ham:  P(E₁=Yes|Ham)  × P(E₂=Yes|Ham)  × P(E₃=No|Ham)
+
+NOTE ON E₃:
+    P(E₃=No|Spam) = 1 - P(E₃=Yes|Spam) = 1 - 0.05 = 0.95
+    P(E₃=No|Ham)  = 1 - P(E₃=Yes|Ham)  = 1 - 0.80 = 0.20</code></pre></div>
+<hr>
+<h2>THE FULL CALCULATION — STEP BY STEP</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>═══════════════════════════════════════════════════
+</span>STEP 1: COMPUTE JOINT LIKELIHOOD FOR SPAM
+═══════════════════════════════════════════════════
+
+P(E₁=Y,E₂=Y,E₃=N | Spam) = P(E₁=Y|Spam) × P(E₂=Y|Spam) × P(E₃=N|Spam)
+                            = 0.70 × 0.60 × 0.95
+                            = 0.399
+
+
+═══════════════════════════════════════════════════
+STEP 2: COMPUTE JOINT LIKELIHOOD FOR HAM
+═══════════════════════════════════════════════════
+
+P(E₁=Y,E₂=Y,E₃=N | Ham)  = P(E₁=Y|Ham) × P(E₂=Y|Ham) × P(E₃=N|Ham)
+                            = 0.10 × 0.05 × 0.20
+                            = 0.001
+
+
+═══════════════════════════════════════════════════
+STEP 3: COMPUTE NUMERATORS (same pattern as Problem 2)
+═══════════════════════════════════════════════════
+
+Numerator_Spam = P(Spam) × P(Evidence|Spam) = 0.20 × 0.399 = 0.0798
+Numerator_Ham  = P(Ham)  × P(Evidence|Ham)  = 0.80 × 0.001 = 0.0008
+
+
+═══════════════════════════════════════════════════
+STEP 4: COMPUTE DENOMINATOR (from Problem 2)
+═══════════════════════════════════════════════════
+
+P(Evidence) = 0.0798 + 0.0008 = 0.0806
+
+
+═══════════════════════════════════════════════════
+STEP 5: COMPUTE POSTERIORS
+═══════════════════════════════════════════════════
+
+P(Spam|Evidence) = 0.0798 / 0.0806 = 0.99008 ≈ 99.01%
+P(Ham|Evidence)  = 0.0008 / 0.0806 = 0.00992 ≈ 0.99%
+
+
+═══════════════════════════════════════════════════
+STEP 6: VERIFY
+═══════════════════════════════════════════════════
+
+0.99008 + 0.00992 = 1.00000  ✓
+
+
+═══════════════════════════════════════════════════
+CONCLUSION
+═══════════════════════════════════════════════════
+
+    This email is 99.01% likely to be SPAM.
+    → Contains "FREE"     → strongly spammy
+    → ALL CAPS subject    → strongly spammy
+    → Not in contacts     → strongly spammy
+    → All three features COMPOUND each other
+    → The product of likelihoods made the spam case overwhelming</code></pre></div>
+<hr>
+<h2>THE POWER OF MULTIPLE EVIDENCE — VISUAL</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>SINGLE FEATURE ANALYSIS (each alone):
+</span>┌──────────────────────────────────────────────────────────────┐
+│                                                              │
+│  Using ONLY "FREE":                                         │
+│      P(Spam|FREE) = (0.70×0.20) / (0.70×0.20+0.10×0.80)   │
+│                    = 0.14 / 0.22 = 0.6364 = 63.6%          │
+│                                                              │
+│  Using ONLY "ALL CAPS":                                     │
+│      P(Spam|CAPS) = (0.60×0.20) / (0.60×0.20+0.05×0.80)   │
+│                    = 0.12 / 0.16 = 0.7500 = 75.0%          │
+│                                                              │
+│  Using ONLY "Not in contacts":                              │
+│      P(Spam|¬Contact) = (0.95×0.20)/(0.95×0.20+0.20×0.80) │
+│                        = 0.19 / 0.35 = 0.5429 = 54.3%     │
+│                                                              │
+│  Using ALL THREE together:                                   │
+│      P(Spam|All) = 99.01%                                   │
+│                                                              │
+│  PRIOR:                     20.0%  ░░░░░░░░░░               │
+│  After "FREE" alone:        63.6%  ████████████████          │
+│  After "CAPS" alone:        75.0%  ██████████████████        │
+│  After "¬Contact" alone:    54.3%  █████████████             │
+│  After ALL THREE:           99.0%  █████████████████████████ │
+│                                                              │
+│  MULTIPLE FEATURES COMPOUND → MUCH STRONGER CONCLUSION      │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘</code></pre></div>
+<hr>
+<h2>WHY THE ASSUMPTION IS CALLED "NAIVE"</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>THE NAIVE PART:
+</span>
+    We assumed: P("FREE", "CAPS", "¬Contact" | Spam) 
+              = P("FREE"|Spam) × P("CAPS"|Spam) × P("¬Contact"|Spam)
+
+    IN REALITY:
+        → Spam emails with "FREE" might be MORE likely to also have "CAPS"
+        → These features may be CORRELATED even within the spam class
+        → A Nigerian prince email has BOTH "FREE" and "CAPS" together
+        → Our assumption IGNORES this correlation
+
+    THE SURPRISING TRUTH:
+        → Despite being "wrong," Naive Bayes works EXTREMELY well
+        → The RANKING of classes is often correct even if exact 
+          probabilities are off
+        → P(Spam|E) = 99.01% might really be 97% or 99.5%
+        → But the DECISION (classify as spam) is the same
+        → Naive Bayes is wrong on probabilities, right on decisions
+
+    WHY IT WORKS DESPITE BEING WRONG:
+        → The denominator normalizes everything
+        → Correlated features over-count evidence for BOTH classes
+        → The over-counting partially CANCELS OUT in the ratio
+        → Classification accuracy remains high
+        → This is one of the great surprises of machine learning</code></pre></div>
+<hr>
+<h2>WHAT COULD BE DONE</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>→ Add MORE features (links count, attachment type, time sent, etc.)
+</span>    → Each feature MULTIPLIES into the likelihood
+    → More features → more discriminative power
+    → But also more parameters to estimate
+
+→ Handle MISSING features
+    → If a feature is unobserved, simply OMIT it from the product
+    → P(E₁,E₃|Spam) = P(E₁|Spam) × P(E₃|Spam) — skip E₂
+    → Naive Bayes handles missing data GRACEFULLY
+
+→ Use LAPLACE SMOOTHING for zero probabilities
+    → If no spam email ever had feature X, P(X|Spam) = 0
+    → Entire product becomes 0 → hypothesis killed permanently
+    → Fix: add a small count to every feature (covered in code below)</code></pre></div>
+<hr>
+<h2>WHAT SHOULD DO</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>✓ ALWAYS check for ZERO probabilities before multiplying
+</span>    → A single zero kills the entire product
+    → Apply Laplace smoothing (add 1 to numerator, add K to denominator)
+
+✓ ALWAYS use LOG probabilities when features are many
+    → Multiplying 50 small probabilities → numerical UNDERFLOW
+    → log(a×b×c) = log(a) + log(b) + log(c)
+    → Products become SUMS in log space
+    → Covered in detail in Problem 5
+
+✓ ALWAYS verify the COMPLEMENT correctly
+    → If feature is ABSENT: use P(Eᵢ=No|Class) = 1 - P(Eᵢ=Yes|Class)
+    → Forgetting this is a common bug
+
+✓ ALWAYS estimate likelihoods from SUFFICIENT data
+    → P(Feature|Class) estimated from 5 emails is unreliable
+    → Need at least ~30+ examples per feature per class</code></pre></div>
+<hr>
+<h2>WHAT SHOULD NOT DO</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>✗ DO NOT use features that are DETERMINISTICALLY dependent
+</span>    → Feature A: "Contains FREE"
+    → Feature B: "Contains FREE or MONEY"
+    → If A=Yes then B=Yes always → they are NOT independent
+    → Including both DOUBLE-COUNTS the evidence for "FREE"
+    → Posterior becomes overconfident
+
+✗ DO NOT ignore the ABSENCE of a feature
+    → Email does NOT contain "FREE" is ALSO evidence
+    → P("FREE"=No | Spam) = 0.30 is informative
+    → Absence of suspicious features supports Ham
+
+✗ DO NOT assume Naive Bayes posterior is a CALIBRATED probability
+    → 99.01% spam does not mean exactly 99.01 out of 100 similar emails are spam
+    → The independence assumption distorts exact probabilities
+    → Use it for RANKING and CLASSIFICATION, not for precise probability estimation
+    → If calibrated probabilities needed → use Platt scaling or isotonic regression
+
+✗ DO NOT add redundant features thinking "more is always better"
+    → Redundant features violate independence MORE
+    → Can actually DECREASE performance
+    → Each feature should capture DIFFERENT information</code></pre></div>
+<hr>
+<h2>WHEN TO USE MULTIPLE-EVIDENCE BAYES (NAIVE BAYES)</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>✓ Text classification (spam, sentiment, topic)
+</span>✓ Medical diagnosis with multiple symptoms
+✓ Fraud detection with multiple transaction features
+✓ Any classification where features are APPROXIMATELY independent given class
+✓ When training data is LIMITED (Naive Bayes needs very little data)
+✓ When you need a FAST, interpretable baseline
+✓ When features are categorical or can be discretized</code></pre></div>
+<hr>
+<h2>WHEN NOT TO USE</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>✗ When features are HIGHLY correlated given the class
+</span>    → Example: pixel values in images (neighboring pixels are very correlated)
+    → Use neural networks or tree-based methods instead
+
+✗ When you need PRECISE probability estimates
+    → Naive Bayes probabilities are systematically miscalibrated
+    → Tends to push probabilities toward 0 or 1 (overconfident)
+
+✗ When feature INTERACTIONS are crucial
+    → "FREE" alone is fine, "MONEY" alone is fine
+    → But "FREE MONEY" together is much more suspicious than either alone
+    → Naive Bayes cannot capture this interaction
+    → Need logistic regression or tree models for interactions</code></pre></div>
+<hr>
+<h2>HOW IT ONLY WORKS — INTERNAL MECHANICS</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>THE DECOMPOSITION TRICK:
+</span>
+    EXACT BAYES:
+        P(H|E₁,E₂,...,Eₘ) ∝ P(E₁,E₂,...,Eₘ|H) × P(H)
+
+    The joint likelihood P(E₁,E₂,...,Eₘ|H) requires exponential data.
+
+    CHAIN RULE (exact but still hard):
+        P(E₁,E₂,E₃|H) = P(E₁|H) × P(E₂|E₁,H) × P(E₃|E₁,E₂,H)
+
+    Each conditional depends on ALL previous features.
+    Still need massive data.
+
+    NAIVE ASSUMPTION (tractable):
+        P(E₂|E₁,H) ≈ P(E₂|H)     → E₁ doesn't matter once H is known
+        P(E₃|E₁,E₂,H) ≈ P(E₃|H)  → E₁,E₂ don't matter once H is known
+
+    THEREFORE:
+        P(E₁,E₂,E₃|H) ≈ P(E₁|H) × P(E₂|H) × P(E₃|H)
+
+    PARAMETERS NEEDED:
+        Exact:  2ᴹ - 1 per class (exponential)
+        Naive:  M per class (linear)
+
+    FOR 50 FEATURES:
+        Exact:  1,125,899,906,842,623 parameters per class
+        Naive:  50 parameters per class
+        Ratio:  22.5 TRILLION times fewer parameters
+
+
+THE PRODUCT AS EVIDENCE ACCUMULATION:
+
+    Each feature independently "votes":
+        → P(Eᵢ|Spam) &gt; P(Eᵢ|Ham)  → feature votes FOR spam
+        → P(Eᵢ|Spam) &lt; P(Eᵢ|Ham)  → feature votes AGAINST spam
+        → P(Eᵢ|Spam) = P(Eᵢ|Ham)  → feature is NEUTRAL (no information)
+
+    The product ACCUMULATES all votes.
+    Strong features dominate.
+    Neutral features contribute factor of 1 (no effect).
+    Contradictory features partially cancel.
+
+    
+THE LIKELIHOOD RATIO VIEW:
+
+    Instead of computing full posteriors, compare:
+
+        Numerator_Spam     P(Spam)     P(E₁|Spam)   P(E₂|Spam)   P(E₃|Spam)
+        ────────────── = ────────── × ─────────── × ─────────── × ───────────
+        Numerator_Ham      P(Ham)      P(E₁|Ham)    P(E₂|Ham)    P(E₃|Ham)
+
+                         Prior Odds × LR₁ × LR₂ × LR₃ = Posterior Odds
+
+    WHERE LRᵢ = P(Eᵢ|Spam)/P(Eᵢ|Ham) is the LIKELIHOOD RATIO for feature i
+
+    FOR OUR PROBLEM:
+        Prior Odds = 0.20/0.80 = 0.25
+
+        LR₁ = 0.70/0.10 = 7.00   ("FREE" is 7× more likely in spam)
+        LR₂ = 0.60/0.05 = 12.00  ("CAPS" is 12× more likely in spam)
+        LR₃ = 0.95/0.20 = 4.75   ("¬Contact" is 4.75× more likely in spam)
+
+        Posterior Odds = 0.25 × 7.00 × 12.00 × 4.75
+                       = 0.25 × 399.00
+                       = 99.75
+
+        Posterior Probability = 99.75 / (1 + 99.75) = 0.99008 = 99.01%  ✓
+
+    THIS ODDS FORM IS ELEGANT:
+        → Each feature MULTIPLIES the odds
+        → LR &gt; 1 → increases odds of spam
+        → LR &lt; 1 → decreases odds of spam
+        → LR = 1 → no effect</code></pre></div>
+<hr>
+<h2>THE LIKELIHOOD RATIO TABLE — WHICH FEATURES MATTER MOST</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>┌─────────────────────┬────────────┬──────────┬──────────┬─────────────────────┐
+</span>│  Feature            │ P(E|Spam)  │ P(E|Ham) │   LR     │  Interpretation     │
+├─────────────────────┼────────────┼──────────┼──────────┼─────────────────────┤
+│ "FREE" present      │   0.70     │   0.10   │   7.00   │ Strong spam signal  │
+│ ALL CAPS            │   0.60     │   0.05   │  12.00   │ Strongest signal    │
+│ Not in contacts     │   0.95     │   0.20   │   4.75   │ Moderate signal     │
+├─────────────────────┼────────────┼──────────┼──────────┼─────────────────────┤
+│ COMBINED            │            │          │  399.00  │ Overwhelming spam   │
+└─────────────────────┴────────────┴──────────┴──────────┴─────────────────────┘
+
+ALL CAPS alone is the MOST discriminative feature (LR=12).
+But ALL THREE together create a combined LR of 399.
+This is the COMPOUNDING POWER of multiple evidence.</code></pre></div>
+<hr>
+<h2>COMMON PITFALLS AND FAILURE MODES</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>PITFALL 1: THE ZERO-FREQUENCY PROBLEM
+</span>    → No spam email in training data contained "SCHOLARSHIP"
+    → P("SCHOLARSHIP"|Spam) = 0
+    → Product becomes: 0.70 × 0.60 × 0 = 0
+    → Entire spam probability collapses to ZERO
+    → One unseen feature VETOES all other evidence
+    → FIX: Laplace smoothing (add pseudocounts)
+
+    WITHOUT SMOOTHING:  P(word|Spam) = count(word in spam) / count(spam)
+    WITH SMOOTHING:     P(word|Spam) = (count(word in spam) + α) / (count(spam) + α×V)
+    
+    WHERE:
+        α = smoothing parameter (usually 1)
+        V = vocabulary size (number of unique features)
+
+PITFALL 2: NUMERICAL UNDERFLOW
+    → 100 features each with P(Eᵢ|Class) ≈ 0.01
+    → Product: 0.01¹⁰⁰ = 10⁻²⁰⁰
+    → Computer stores this as 0.0 (underflow)
+    → BOTH numerators become 0 → division 0/0 → crash
+    → FIX: Work in LOG SPACE (Problem 5)
+
+PITFALL 3: CORRELATED FEATURES CAUSING OVERCONFIDENCE
+    → Including "contains FREE" AND "contains free" (case variants)
+    → They are perfectly correlated → evidence counted TWICE
+    → Posterior pushed to extreme (99.99% instead of 95%)
+    → FIX: Feature engineering to remove redundancy
+
+PITFALL 4: IMBALANCED PRIORS OVERWHELMING EVIDENCE
+    → If P(Spam) = 0.001 (very rare spam)
+    → Even strong features might not overcome the tiny prior
+    → This is CORRECT Bayesian behavior (recall Problem 1)
+    → But may not be the desired system behavior
+    → FIX: Adjust prior or use a classification threshold</code></pre></div>
+<hr>
+<h2>SCALABILITY CONSIDERATIONS</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>TRAINING:
+</span>    → Need to compute P(Eᵢ|Class) for each feature × each class
+    → M features × K classes = M×K parameters
+    → LINEAR in features, LINEAR in classes
+    → Can train on MILLIONS of emails in seconds
+    → One of the FASTEST classifiers to train
+
+PREDICTION:
+    → For each new email: M multiplications × K classes
+    → O(M×K) per prediction
+    → Extremely fast — microseconds per email
+
+STORAGE:
+    → Store M×K probability values
+    → For 50,000 word vocabulary × 2 classes = 100,000 numbers
+    → Trivial storage
+
+COMPARED TO OTHER CLASSIFIERS:
+    → Neural Networks: millions of parameters, GPU needed
+    → Random Forests: thousands of trees, moderate memory
+    → Naive Bayes: M×K numbers, runs on a calculator
+    → THIS is why Naive Bayes is the go-to BASELINE</code></pre></div>
+<hr>
+<h2>INTERPRETABILITY CONSIDERATIONS</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>FULLY TRANSPARENT:
+</span>    → Every feature's contribution is a SINGLE likelihood ratio
+    → Can sort features by LR to find most important
+    → Can explain EXACTLY why an email was classified as spam:
+        "Because it contains FREE (7× more likely in spam),
+         has ALL CAPS subject (12× more likely in spam),
+         and sender is unknown (4.75× more likely in spam)"
+    → No black box — complete audit trail
+
+COMPARED TO DEEP LEARNING:
+    → Neural network says "spam" with no explanation
+    → Naive Bayes says "spam BECAUSE of features X, Y, Z 
+      with contributions 7×, 12×, 4.75×"
+    → In regulated industries (healthcare, finance), 
+      this explainability is REQUIRED
+
+LIMITATION:
+    → Cannot explain feature INTERACTIONS
+    → "FREE MONEY is suspicious" cannot be captured
+    → Only individual feature contributions are visible</code></pre></div>
+<hr>
+<h2>COMPLETE WORKING CODE</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ============================================================</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># PROBLEM 3: THE SPAM DETECTOR</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># Multiple Evidence Bayes — Naive Bayes from Scratch</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># Builds on: Problem 1 (binary), Problem 2 (multi-hypothesis)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># NEW: Multiple features + Conditional Independence</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ============================================================</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 0, 255);">import</span><span> math
+</span>
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ============================================================</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># SECTION 1: MANUAL CALCULATION (matching our hand computation)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ============================================================</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"="</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">70</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"NAIVE BAYES SPAM DETECTOR — MANUAL CALCULATION"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"="</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">70</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ---- PRIORS (same concept as Problem 1) ----</span><span>
+</span><span>p_spam </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.20</span><span>
+</span><span>p_ham </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.80</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ---- INDIVIDUAL LIKELIHOODS ----</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># Format: {feature_name: (P(feature=Yes|Spam), P(feature=Yes|Ham))}</span><span>
+</span><span>feature_likelihoods </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">{</span><span>
+</span><span>    </span><span class="token" style="color: rgb(163, 21, 21);">"Contains FREE"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>    </span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(54, 172, 170);">0.70</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.10</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>
+</span><span>    </span><span class="token" style="color: rgb(163, 21, 21);">"ALL CAPS subject"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(54, 172, 170);">0.60</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.05</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>
+</span><span>    </span><span class="token" style="color: rgb(163, 21, 21);">"In contacts"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>      </span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(54, 172, 170);">0.05</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.80</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>
+</span><span></span><span class="token" style="color: rgb(57, 58, 52);">}</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ---- OBSERVED EVIDENCE ----</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># True = feature is present, False = feature is absent</span><span>
+</span><span>observed </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">{</span><span>
+</span><span>    </span><span class="token" style="color: rgb(163, 21, 21);">"Contains FREE"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>    </span><span class="token" style="color: rgb(54, 172, 170);">True</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>
+</span><span>    </span><span class="token" style="color: rgb(163, 21, 21);">"ALL CAPS subject"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">True</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>
+</span><span>    </span><span class="token" style="color: rgb(163, 21, 21);">"In contacts"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>      </span><span class="token" style="color: rgb(54, 172, 170);">False</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>   </span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># NOT in contacts</span><span>
+</span><span></span><span class="token" style="color: rgb(57, 58, 52);">}</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ---- STEP 1: Compute individual likelihood values for this email ----</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"\nSTEP 1: Individual Likelihoods for Observed Evidence"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"-"</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">70</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'Feature'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&lt;25</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'Observed'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;10</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'P(obs|Spam)'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;14</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'P(obs|Ham)'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;14</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'LR'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;8</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"-"</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">70</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span>spam_likelihoods </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">[</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span>
+</span><span>ham_likelihoods </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">[</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span>
+</span><span>likelihood_ratios </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">[</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> feature</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> is_present </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> observed</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>items</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>    p_yes_spam</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> p_yes_ham </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> feature_likelihoods</span><span class="token" style="color: rgb(57, 58, 52);">[</span><span>feature</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span>
+</span>
+<span>    </span><span class="token" style="color: rgb(0, 0, 255);">if</span><span> is_present</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>        p_obs_spam </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> p_yes_spam
+</span><span>        p_obs_ham </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> p_yes_ham
+</span><span>    </span><span class="token" style="color: rgb(0, 0, 255);">else</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>        </span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># Feature is ABSENT → use complement</span><span>
+</span><span>        p_obs_spam </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">1</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">-</span><span> p_yes_spam
+</span><span>        p_obs_ham </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">1</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">-</span><span> p_yes_ham
+</span>
+<span>    lr </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> p_obs_spam </span><span class="token" style="color: rgb(57, 58, 52);">/</span><span> p_obs_ham
+</span><span>    spam_likelihoods</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>append</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>p_obs_spam</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span>    ham_likelihoods</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>append</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>p_obs_ham</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span>    likelihood_ratios</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>append</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>lr</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span>    obs_str </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"Yes"</span><span> </span><span class="token" style="color: rgb(0, 0, 255);">if</span><span> is_present </span><span class="token" style="color: rgb(0, 0, 255);">else</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"No"</span><span>
+</span><span>    </span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">feature</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&lt;25</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">obs_str</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;10</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">p_obs_spam</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;14.4f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">p_obs_ham</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;14.4f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">lr</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;8.2f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ---- STEP 2: Compute JOINT likelihoods (product — the NAIVE assumption) ----</span><span>
+</span><span>joint_spam </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">1.0</span><span>
+</span><span>joint_ham </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">1.0</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> ls </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> spam_likelihoods</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>    joint_spam </span><span class="token" style="color: rgb(57, 58, 52);">*=</span><span> ls
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> lh </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> ham_likelihoods</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>    joint_ham </span><span class="token" style="color: rgb(57, 58, 52);">*=</span><span> lh
+</span>
+<span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"\n</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'JOINT (product)'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&lt;25</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">''</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;10</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">joint_spam</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;14.6f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">joint_ham</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;14.6f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ---- STEP 3: Compute numerators (same as Problem 2) ----</span><span>
+</span><span>num_spam </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> p_spam </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> joint_spam
+</span><span>num_ham </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> p_ham </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> joint_ham
+</span><span>denominator </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> num_spam </span><span class="token" style="color: rgb(57, 58, 52);">+</span><span> num_ham
+</span>
+<span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"\nSTEP 2: Numerators"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"  Numerator_Spam = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">p_spam</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> × </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">joint_spam</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.6f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">num_spam</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.8f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"  Numerator_Ham  = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">p_ham</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> × </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">joint_ham</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.6f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">num_ham</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.8f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"  Denominator    = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">num_spam</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.8f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> + </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">num_ham</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.8f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">denominator</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.8f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ---- STEP 4: Compute posteriors ----</span><span>
+</span><span>post_spam </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> num_spam </span><span class="token" style="color: rgb(57, 58, 52);">/</span><span> denominator
+</span><span>post_ham </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> num_ham </span><span class="token" style="color: rgb(57, 58, 52);">/</span><span> denominator
+</span>
+<span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"\nSTEP 3: Posteriors"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"  P(Spam|Evidence) = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">num_spam</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.8f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> / </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">denominator</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.8f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">post_spam</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.5f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">post_spam</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">*</span><span class="token string-interpolation interpolation" style="color: rgb(54, 172, 170);">100</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.2f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">%"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"  P(Ham|Evidence)  = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">num_ham</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.8f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> / </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">denominator</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.8f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">post_ham</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.5f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">post_ham</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">*</span><span class="token string-interpolation interpolation" style="color: rgb(54, 172, 170);">100</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.2f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">%"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"  Sum check: </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">post_spam </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">+</span><span class="token string-interpolation interpolation"> post_ham</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.5f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> ✓"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ---- STEP 5: Likelihood Ratio analysis ----</span><span>
+</span><span>combined_lr </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">1.0</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> lr </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> likelihood_ratios</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>    combined_lr </span><span class="token" style="color: rgb(57, 58, 52);">*=</span><span> lr
+</span>
+<span>prior_odds </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> p_spam </span><span class="token" style="color: rgb(57, 58, 52);">/</span><span> p_ham
+</span><span>posterior_odds </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> prior_odds </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> combined_lr
+</span>
+<span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"\nLIKELIHOOD RATIO ANALYSIS:"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"  Prior Odds (Spam:Ham)    = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">prior_odds</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.4f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"  Combined Likelihood Ratio = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">combined_lr</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.2f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"  Posterior Odds            = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">prior_odds</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.4f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> × </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">combined_lr</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.2f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">posterior_odds</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.4f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"  Posterior Probability     = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">posterior_odds</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.4f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> / (1 + </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">posterior_odds</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.4f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">) = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">posterior_odds</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">/</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation interpolation" style="color: rgb(54, 172, 170);">1</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">+</span><span class="token string-interpolation interpolation">posterior_odds</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">)</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.5f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ============================================================</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># SECTION 2: REUSABLE NAIVE BAYES CLASS</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ============================================================</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"\n\n"</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">+</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"="</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">70</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"REUSABLE NAIVE BAYES CLASSIFIER"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"="</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">70</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 0, 255);">class</span><span> </span><span class="token" style="color: rgb(43, 145, 175);">NaiveBayesClassifier</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>    </span><span class="token triple-quoted-string" style="color: rgb(163, 21, 21);">"""
+</span><span class="token triple-quoted-string" style="color: rgb(163, 21, 21);">    Binary Naive Bayes with Laplace smoothing.
+</span><span class="token triple-quoted-string" style="color: rgb(163, 21, 21);">    Trained from labeled examples.
+</span><span class="token triple-quoted-string" style="color: rgb(163, 21, 21);">    """</span><span>
+</span>
+<span>    </span><span class="token" style="color: rgb(0, 0, 255);">def</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">__init__</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>self</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> alpha</span><span class="token" style="color: rgb(57, 58, 52);">=</span><span class="token" style="color: rgb(54, 172, 170);">1.0</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>        self</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>alpha </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> alpha          </span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># Laplace smoothing parameter</span><span>
+</span><span>        self</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>class_counts </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">{</span><span class="token" style="color: rgb(57, 58, 52);">}</span><span>      </span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># {class: count}</span><span>
+</span><span>        self</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>feature_counts </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">{</span><span class="token" style="color: rgb(57, 58, 52);">}</span><span>    </span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># {class: {feature: count_present}}</span><span>
+</span><span>        self</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>total_count </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0</span><span>
+</span><span>        self</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>feature_names </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token builtin">set</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span>    </span><span class="token" style="color: rgb(0, 0, 255);">def</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">train</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>self</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> examples</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>        </span><span class="token triple-quoted-string" style="color: rgb(163, 21, 21);">"""
+</span><span class="token triple-quoted-string" style="color: rgb(163, 21, 21);">        examples: list of (features_dict, class_label)
+</span><span class="token triple-quoted-string" style="color: rgb(163, 21, 21);">        features_dict: {feature_name: True/False}
+</span><span class="token triple-quoted-string" style="color: rgb(163, 21, 21);">        """</span><span>
+</span><span>        </span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> features</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> label </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> examples</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>            </span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># Count classes</span><span>
+</span><span>            self</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>class_counts</span><span class="token" style="color: rgb(57, 58, 52);">[</span><span>label</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> self</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>class_counts</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>get</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>label</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">+</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">1</span><span>
+</span><span>            self</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>total_count </span><span class="token" style="color: rgb(57, 58, 52);">+=</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">1</span><span>
+</span>
+<span>            </span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># Count features per class</span><span>
+</span><span>            </span><span class="token" style="color: rgb(0, 0, 255);">if</span><span> label </span><span class="token" style="color: rgb(0, 0, 255);">not</span><span> </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> self</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>feature_counts</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>                self</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>feature_counts</span><span class="token" style="color: rgb(57, 58, 52);">[</span><span>label</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">{</span><span class="token" style="color: rgb(57, 58, 52);">}</span><span>
+</span>
+<span>            </span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> fname</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> fval </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> features</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>items</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>                self</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>feature_names</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>add</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>fname</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span>                </span><span class="token" style="color: rgb(0, 0, 255);">if</span><span> fval</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>  </span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># Feature is present</span><span>
+</span><span>                    self</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>feature_counts</span><span class="token" style="color: rgb(57, 58, 52);">[</span><span>label</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span class="token" style="color: rgb(57, 58, 52);">[</span><span>fname</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> \
+</span><span>                        self</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>feature_counts</span><span class="token" style="color: rgb(57, 58, 52);">[</span><span>label</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>get</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>fname</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">+</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">1</span><span>
+</span>
+<span>    </span><span class="token" style="color: rgb(0, 0, 255);">def</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">get_prior</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>self</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> label</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>        </span><span class="token" style="color: rgb(0, 0, 255);">return</span><span> self</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>class_counts</span><span class="token" style="color: rgb(57, 58, 52);">[</span><span>label</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">/</span><span> self</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>total_count
+</span>
+<span>    </span><span class="token" style="color: rgb(0, 0, 255);">def</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">get_likelihood</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>self</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> feature</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> value</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> label</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>        </span><span class="token triple-quoted-string" style="color: rgb(163, 21, 21);">"""P(feature=value | label) with Laplace smoothing"""</span><span>
+</span><span>        count_present </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> self</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>feature_counts</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>get</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>label</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">{</span><span class="token" style="color: rgb(57, 58, 52);">}</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>get</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>feature</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span>        count_class </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> self</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>class_counts</span><span class="token" style="color: rgb(57, 58, 52);">[</span><span>label</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span>
+</span>
+<span>        </span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># Laplace smoothing: add alpha to numerator, 2*alpha to denominator</span><span>
+</span><span>        p_present </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>count_present </span><span class="token" style="color: rgb(57, 58, 52);">+</span><span> self</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>alpha</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">/</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>count_class </span><span class="token" style="color: rgb(57, 58, 52);">+</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">2</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> self</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>alpha</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span>        </span><span class="token" style="color: rgb(0, 0, 255);">if</span><span> value</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>            </span><span class="token" style="color: rgb(0, 0, 255);">return</span><span> p_present
+</span><span>        </span><span class="token" style="color: rgb(0, 0, 255);">else</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>            </span><span class="token" style="color: rgb(0, 0, 255);">return</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">1</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">-</span><span> p_present
+</span>
+<span>    </span><span class="token" style="color: rgb(0, 0, 255);">def</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">predict</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>self</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> features</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> explain</span><span class="token" style="color: rgb(57, 58, 52);">=</span><span class="token" style="color: rgb(54, 172, 170);">False</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>        </span><span class="token triple-quoted-string" style="color: rgb(163, 21, 21);">"""
+</span><span class="token triple-quoted-string" style="color: rgb(163, 21, 21);">        Predict class for a new example.
+</span><span class="token triple-quoted-string" style="color: rgb(163, 21, 21);">        Returns: (predicted_class, posterior_dict, explanation)
+</span><span class="token triple-quoted-string" style="color: rgb(163, 21, 21);">        """</span><span>
+</span><span>        scores </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">{</span><span class="token" style="color: rgb(57, 58, 52);">}</span><span>
+</span><span>        explanations </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">{</span><span class="token" style="color: rgb(57, 58, 52);">}</span><span>
+</span>
+<span>        </span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> label </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> self</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>class_counts</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>            </span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># Start with log prior</span><span>
+</span><span>            log_score </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> math</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>log</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>self</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>get_prior</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>label</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span>            feature_details </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">[</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span>
+</span>
+<span>            </span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> fname</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> fval </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> features</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>items</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>                likelihood </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> self</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>get_likelihood</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>fname</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> fval</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> label</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span>                log_score </span><span class="token" style="color: rgb(57, 58, 52);">+=</span><span> math</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>log</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>likelihood</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span>                feature_details</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>append</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>fname</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> fval</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> likelihood</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span>            scores</span><span class="token" style="color: rgb(57, 58, 52);">[</span><span>label</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> log_score
+</span><span>            explanations</span><span class="token" style="color: rgb(57, 58, 52);">[</span><span>label</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> feature_details
+</span>
+<span>        </span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># Convert log scores to probabilities (log-sum-exp trick)</span><span>
+</span><span>        max_score </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token builtin">max</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>scores</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>values</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span>        exp_scores </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">{</span><span>label</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span> math</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>exp</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>score </span><span class="token" style="color: rgb(57, 58, 52);">-</span><span> max_score</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span>                      </span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> label</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> score </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> scores</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>items</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">}</span><span>
+</span><span>        total_exp </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token builtin">sum</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>exp_scores</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>values</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span>        posteriors </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">{</span><span>label</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span> exp_s </span><span class="token" style="color: rgb(57, 58, 52);">/</span><span> total_exp
+</span><span>                      </span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> label</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> exp_s </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> exp_scores</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>items</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">}</span><span>
+</span>
+<span>        predicted </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token builtin">max</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>posteriors</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> key</span><span class="token" style="color: rgb(57, 58, 52);">=</span><span>posteriors</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>get</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span>        </span><span class="token" style="color: rgb(0, 0, 255);">if</span><span> explain</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>            </span><span class="token" style="color: rgb(0, 0, 255);">return</span><span> predicted</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> posteriors</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> explanations
+</span><span>        </span><span class="token" style="color: rgb(0, 0, 255);">return</span><span> predicted</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> posteriors
+</span>
+
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ============================================================</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># SECTION 3: TRAIN AND TEST WITH SIMULATED DATA</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ============================================================</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"\nGenerating training data from known distributions..."</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 0, 255);">import</span><span> random
+</span><span>random</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>seed</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(54, 172, 170);">42</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 0, 255);">def</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">generate_email</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>is_spam</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>    </span><span class="token triple-quoted-string" style="color: rgb(163, 21, 21);">"""Generate one email based on known feature distributions"""</span><span>
+</span><span>    </span><span class="token" style="color: rgb(0, 0, 255);">if</span><span> is_spam</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>        features </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">{</span><span>
+</span><span>            </span><span class="token" style="color: rgb(163, 21, 21);">"contains_FREE"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>    random</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>random</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">&lt;</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.70</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>
+</span><span>            </span><span class="token" style="color: rgb(163, 21, 21);">"all_caps_subject"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span> random</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>random</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">&lt;</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.60</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>
+</span><span>            </span><span class="token" style="color: rgb(163, 21, 21);">"in_contacts"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>      random</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>random</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">&lt;</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.05</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>
+</span><span>            </span><span class="token" style="color: rgb(163, 21, 21);">"has_links"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>        random</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>random</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">&lt;</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.80</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>
+</span><span>            </span><span class="token" style="color: rgb(163, 21, 21);">"has_attachment"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>   random</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>random</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">&lt;</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.30</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>
+</span><span>        </span><span class="token" style="color: rgb(57, 58, 52);">}</span><span>
+</span><span>        label </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"SPAM"</span><span>
+</span><span>    </span><span class="token" style="color: rgb(0, 0, 255);">else</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>        features </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">{</span><span>
+</span><span>            </span><span class="token" style="color: rgb(163, 21, 21);">"contains_FREE"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>    random</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>random</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">&lt;</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.10</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>
+</span><span>            </span><span class="token" style="color: rgb(163, 21, 21);">"all_caps_subject"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span> random</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>random</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">&lt;</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.05</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>
+</span><span>            </span><span class="token" style="color: rgb(163, 21, 21);">"in_contacts"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>      random</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>random</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">&lt;</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.80</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>
+</span><span>            </span><span class="token" style="color: rgb(163, 21, 21);">"has_links"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>        random</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>random</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">&lt;</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.30</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>
+</span><span>            </span><span class="token" style="color: rgb(163, 21, 21);">"has_attachment"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>   random</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>random</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">&lt;</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.40</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>
+</span><span>        </span><span class="token" style="color: rgb(57, 58, 52);">}</span><span>
+</span><span>        label </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"HAM"</span><span>
+</span><span>    </span><span class="token" style="color: rgb(0, 0, 255);">return</span><span> features</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> label
+</span>
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># Generate training set</span><span>
+</span><span>training_data </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">[</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> _ </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> </span><span class="token builtin">range</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(54, 172, 170);">2000</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>    training_data</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>append</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>generate_email</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>is_spam</span><span class="token" style="color: rgb(57, 58, 52);">=</span><span class="token" style="color: rgb(54, 172, 170);">True</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> _ </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> </span><span class="token builtin">range</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(54, 172, 170);">8000</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>    training_data</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>append</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>generate_email</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>is_spam</span><span class="token" style="color: rgb(57, 58, 52);">=</span><span class="token" style="color: rgb(54, 172, 170);">False</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span>random</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>shuffle</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>training_data</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"Training set size: </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation builtin">len</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation interpolation">training_data</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">)</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"Spam: </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation builtin">sum</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation interpolation" style="color: rgb(54, 172, 170);">1</span><span class="token string-interpolation interpolation"> </span><span class="token string-interpolation interpolation" style="color: rgb(0, 0, 255);">for</span><span class="token string-interpolation interpolation"> _</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">,</span><span class="token string-interpolation interpolation"> l </span><span class="token string-interpolation interpolation" style="color: rgb(0, 0, 255);">in</span><span class="token string-interpolation interpolation"> training_data </span><span class="token string-interpolation interpolation" style="color: rgb(0, 0, 255);">if</span><span class="token string-interpolation interpolation"> l </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">==</span><span class="token string-interpolation interpolation"> </span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'SPAM'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">)</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"Ham:  </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation builtin">sum</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation interpolation" style="color: rgb(54, 172, 170);">1</span><span class="token string-interpolation interpolation"> </span><span class="token string-interpolation interpolation" style="color: rgb(0, 0, 255);">for</span><span class="token string-interpolation interpolation"> _</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">,</span><span class="token string-interpolation interpolation"> l </span><span class="token string-interpolation interpolation" style="color: rgb(0, 0, 255);">in</span><span class="token string-interpolation interpolation"> training_data </span><span class="token string-interpolation interpolation" style="color: rgb(0, 0, 255);">if</span><span class="token string-interpolation interpolation"> l </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">==</span><span class="token string-interpolation interpolation"> </span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'HAM'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">)</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># Train classifier</span><span>
+</span><span>clf </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> NaiveBayesClassifier</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>alpha</span><span class="token" style="color: rgb(57, 58, 52);">=</span><span class="token" style="color: rgb(54, 172, 170);">1.0</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span>clf</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>train</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>training_data</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ---- Show learned parameters ----</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"\n"</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">+</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"-"</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">70</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"LEARNED PARAMETERS:"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"-"</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">70</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'Feature'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&lt;25</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'P(F=Yes|SPAM)'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;15</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'P(F=Yes|HAM)'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;15</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'LR'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;8</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"-"</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">70</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> fname </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> </span><span class="token builtin">sorted</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>clf</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>feature_names</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>    p_spam_f </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> clf</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>get_likelihood</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>fname</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">True</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"SPAM"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span>    p_ham_f </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> clf</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>get_likelihood</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>fname</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">True</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"HAM"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span>    lr </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> p_spam_f </span><span class="token" style="color: rgb(57, 58, 52);">/</span><span> p_ham_f </span><span class="token" style="color: rgb(0, 0, 255);">if</span><span> p_ham_f </span><span class="token" style="color: rgb(57, 58, 52);">&gt;</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0</span><span> </span><span class="token" style="color: rgb(0, 0, 255);">else</span><span> </span><span class="token builtin">float</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">'inf'</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span>    </span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">fname</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&lt;25</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">p_spam_f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;15.4f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">p_ham_f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;15.4f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">lr</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;8.2f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"\nPrior P(SPAM) = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">clf</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">.</span><span class="token string-interpolation interpolation">get_prior</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'SPAM'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">)</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.4f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"Prior P(HAM)  = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">clf</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">.</span><span class="token string-interpolation interpolation">get_prior</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'HAM'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">)</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.4f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ---- Test with our original email ----</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"\n"</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">+</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"="</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">70</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"CLASSIFYING THE ORIGINAL EMAIL"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"="</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">70</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span>test_email </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">{</span><span>
+</span><span>    </span><span class="token" style="color: rgb(163, 21, 21);">"contains_FREE"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>    </span><span class="token" style="color: rgb(54, 172, 170);">True</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>
+</span><span>    </span><span class="token" style="color: rgb(163, 21, 21);">"all_caps_subject"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">True</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>
+</span><span>    </span><span class="token" style="color: rgb(163, 21, 21);">"in_contacts"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>      </span><span class="token" style="color: rgb(54, 172, 170);">False</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>
+</span><span>    </span><span class="token" style="color: rgb(163, 21, 21);">"has_links"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>        </span><span class="token" style="color: rgb(54, 172, 170);">True</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>
+</span><span>    </span><span class="token" style="color: rgb(163, 21, 21);">"has_attachment"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>   </span><span class="token" style="color: rgb(54, 172, 170);">False</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>
+</span><span></span><span class="token" style="color: rgb(57, 58, 52);">}</span><span>
+</span>
+<span>predicted</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> posteriors</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> explanations </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> clf</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>predict</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>test_email</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> explain</span><span class="token" style="color: rgb(57, 58, 52);">=</span><span class="token" style="color: rgb(54, 172, 170);">True</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"\nObserved features:"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> fname</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> fval </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> test_email</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>items</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>    </span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"  </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">fname</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&lt;25</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'Yes'</span><span class="token string-interpolation interpolation"> </span><span class="token string-interpolation interpolation" style="color: rgb(0, 0, 255);">if</span><span class="token string-interpolation interpolation"> fval </span><span class="token string-interpolation interpolation" style="color: rgb(0, 0, 255);">else</span><span class="token string-interpolation interpolation"> </span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'No'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"\nPosterior probabilities:"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> label</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> post </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> </span><span class="token builtin">sorted</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>posteriors</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>items</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> key</span><span class="token" style="color: rgb(57, 58, 52);">=</span><span class="token" style="color: rgb(0, 0, 255);">lambda</span><span> x</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">-</span><span>x</span><span class="token" style="color: rgb(57, 58, 52);">[</span><span class="token" style="color: rgb(54, 172, 170);">1</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>    bar </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"█"</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token builtin">int</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>post </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">50</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span>    </span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"  </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">label</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&lt;8</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">post</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;8.4f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> (</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">post</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">*</span><span class="token string-interpolation interpolation" style="color: rgb(54, 172, 170);">100</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.2f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">%)  </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">bar</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"\n→ CLASSIFICATION: </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">predicted</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ---- Show per-feature contribution ----</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"\nFeature contributions for SPAM:"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> fname</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> fval</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> likelihood </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> explanations</span><span class="token" style="color: rgb(57, 58, 52);">[</span><span class="token" style="color: rgb(163, 21, 21);">"SPAM"</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>    ham_likelihood </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> clf</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>get_likelihood</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>fname</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> fval</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"HAM"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span>    lr </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> likelihood </span><span class="token" style="color: rgb(57, 58, 52);">/</span><span> ham_likelihood </span><span class="token" style="color: rgb(0, 0, 255);">if</span><span> ham_likelihood </span><span class="token" style="color: rgb(57, 58, 52);">&gt;</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0</span><span> </span><span class="token" style="color: rgb(0, 0, 255);">else</span><span> </span><span class="token builtin">float</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">'inf'</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span>    direction </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"→ supports SPAM"</span><span> </span><span class="token" style="color: rgb(0, 0, 255);">if</span><span> lr </span><span class="token" style="color: rgb(57, 58, 52);">&gt;</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">1</span><span> </span><span class="token" style="color: rgb(0, 0, 255);">else</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"→ supports HAM"</span><span>
+</span><span>    </span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"  </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">fname</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&lt;25</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> P(obs|SPAM)=</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">likelihood</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.4f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">  "</span><span>
+</span><span>          </span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"P(obs|HAM)=</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">ham_likelihood</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.4f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">  LR=</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">lr</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.2f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">  </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">direction</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ============================================================</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># SECTION 4: EVALUATE ON TEST SET</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ============================================================</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"\n\n"</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">+</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"="</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">70</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"EVALUATION ON FRESH TEST DATA"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"="</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">70</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># Generate test set</span><span>
+</span><span>test_data </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">[</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> _ </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> </span><span class="token builtin">range</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(54, 172, 170);">500</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>    test_data</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>append</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>generate_email</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>is_spam</span><span class="token" style="color: rgb(57, 58, 52);">=</span><span class="token" style="color: rgb(54, 172, 170);">True</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> _ </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> </span><span class="token builtin">range</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(54, 172, 170);">2000</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>    test_data</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>append</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>generate_email</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>is_spam</span><span class="token" style="color: rgb(57, 58, 52);">=</span><span class="token" style="color: rgb(54, 172, 170);">False</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span>random</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>shuffle</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>test_data</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># Classify all test emails</span><span>
+</span><span>correct </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0</span><span>
+</span><span>true_pos </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0</span><span>
+</span><span>false_pos </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0</span><span>
+</span><span>true_neg </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0</span><span>
+</span><span>false_neg </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> features</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> true_label </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> test_data</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>    pred</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> _ </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> clf</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>predict</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>features</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span>    </span><span class="token" style="color: rgb(0, 0, 255);">if</span><span> pred </span><span class="token" style="color: rgb(57, 58, 52);">==</span><span> true_label</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>        correct </span><span class="token" style="color: rgb(57, 58, 52);">+=</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">1</span><span>
+</span><span>    </span><span class="token" style="color: rgb(0, 0, 255);">if</span><span> pred </span><span class="token" style="color: rgb(57, 58, 52);">==</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"SPAM"</span><span> </span><span class="token" style="color: rgb(0, 0, 255);">and</span><span> true_label </span><span class="token" style="color: rgb(57, 58, 52);">==</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"SPAM"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>        true_pos </span><span class="token" style="color: rgb(57, 58, 52);">+=</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">1</span><span>
+</span><span>    </span><span class="token" style="color: rgb(0, 0, 255);">elif</span><span> pred </span><span class="token" style="color: rgb(57, 58, 52);">==</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"SPAM"</span><span> </span><span class="token" style="color: rgb(0, 0, 255);">and</span><span> true_label </span><span class="token" style="color: rgb(57, 58, 52);">==</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"HAM"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>        false_pos </span><span class="token" style="color: rgb(57, 58, 52);">+=</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">1</span><span>
+</span><span>    </span><span class="token" style="color: rgb(0, 0, 255);">elif</span><span> pred </span><span class="token" style="color: rgb(57, 58, 52);">==</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"HAM"</span><span> </span><span class="token" style="color: rgb(0, 0, 255);">and</span><span> true_label </span><span class="token" style="color: rgb(57, 58, 52);">==</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"HAM"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>        true_neg </span><span class="token" style="color: rgb(57, 58, 52);">+=</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">1</span><span>
+</span><span>    </span><span class="token" style="color: rgb(0, 0, 255);">elif</span><span> pred </span><span class="token" style="color: rgb(57, 58, 52);">==</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"HAM"</span><span> </span><span class="token" style="color: rgb(0, 0, 255);">and</span><span> true_label </span><span class="token" style="color: rgb(57, 58, 52);">==</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"SPAM"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>        false_neg </span><span class="token" style="color: rgb(57, 58, 52);">+=</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">1</span><span>
+</span>
+<span>accuracy </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> correct </span><span class="token" style="color: rgb(57, 58, 52);">/</span><span> </span><span class="token builtin">len</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>test_data</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span>precision </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> true_pos </span><span class="token" style="color: rgb(57, 58, 52);">/</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>true_pos </span><span class="token" style="color: rgb(57, 58, 52);">+</span><span> false_pos</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span> </span><span class="token" style="color: rgb(0, 0, 255);">if</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>true_pos </span><span class="token" style="color: rgb(57, 58, 52);">+</span><span> false_pos</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">&gt;</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0</span><span> </span><span class="token" style="color: rgb(0, 0, 255);">else</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0</span><span>
+</span><span>recall </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> true_pos </span><span class="token" style="color: rgb(57, 58, 52);">/</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>true_pos </span><span class="token" style="color: rgb(57, 58, 52);">+</span><span> false_neg</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span> </span><span class="token" style="color: rgb(0, 0, 255);">if</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>true_pos </span><span class="token" style="color: rgb(57, 58, 52);">+</span><span> false_neg</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">&gt;</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0</span><span> </span><span class="token" style="color: rgb(0, 0, 255);">else</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0</span><span>
+</span><span>f1 </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">2</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> precision </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> recall </span><span class="token" style="color: rgb(57, 58, 52);">/</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>precision </span><span class="token" style="color: rgb(57, 58, 52);">+</span><span> recall</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span> </span><span class="token" style="color: rgb(0, 0, 255);">if</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>precision </span><span class="token" style="color: rgb(57, 58, 52);">+</span><span> recall</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">&gt;</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0</span><span> </span><span class="token" style="color: rgb(0, 0, 255);">else</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"\nTest set size: </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation builtin">len</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation interpolation">test_data</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">)</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"\nConfusion Matrix:"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"                    Predicted SPAM    Predicted HAM"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"  Actual SPAM       </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">true_pos</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;10</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">        </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">false_neg</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;10</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"  Actual HAM        </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">false_pos</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;10</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">        </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">true_neg</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;10</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"\nMetrics:"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"  Accuracy:  </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">accuracy</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.4f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> (</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">accuracy</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">*</span><span class="token string-interpolation interpolation" style="color: rgb(54, 172, 170);">100</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.1f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">%)"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"  Precision: </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">precision</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.4f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> (of those we called spam, how many truly were)"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"  Recall:    </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">recall</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.4f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> (of actual spam, how many did we catch)"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"  F1 Score:  </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">f1</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.4f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ============================================================</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># SECTION 5: THE ZERO-FREQUENCY PROBLEM DEMONSTRATION</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ============================================================</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"\n\n"</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">+</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"="</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">70</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"DEMONSTRATION: THE ZERO-FREQUENCY PROBLEM"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"="</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">70</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"\nWithout Laplace smoothing (alpha=0):"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span>clf_no_smooth </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> NaiveBayesClassifier</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>alpha</span><span class="token" style="color: rgb(57, 58, 52);">=</span><span class="token" style="color: rgb(54, 172, 170);">0.0</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span>clf_no_smooth</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>train</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>training_data</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># Create email with a feature that was NEVER seen in spam training data</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># Simulating: what if "in_contacts" was True for ALL spam? (unlikely but illustrative)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"  If a feature has P(F|Class) = 0, entire product collapses"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"  Laplace smoothing prevents this by adding pseudocounts"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"\n  With alpha=0: P('in_contacts'=Yes|SPAM) might be very small"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"  With alpha=1: P('in_contacts'=Yes|SPAM) gets a safety floor"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> alpha_val </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">[</span><span class="token" style="color: rgb(54, 172, 170);">0.001</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.01</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.1</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">1.0</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">10.0</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>    clf_test </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> NaiveBayesClassifier</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>alpha</span><span class="token" style="color: rgb(57, 58, 52);">=</span><span>alpha_val</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span>    clf_test</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>train</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>training_data</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span>    p </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> clf_test</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>get_likelihood</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"in_contacts"</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">True</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"SPAM"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span>    </span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"  alpha=</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">alpha_val</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&lt;6</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> → P(in_contacts=Yes|SPAM) = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">p</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.6f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span></code></pre></div>
+<hr>
+<h2>EXPECTED OUTPUT (KEY SECTIONS)</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>======================================================================
+</span>NAIVE BAYES SPAM DETECTOR — MANUAL CALCULATION
+======================================================================
+
+STEP 1: Individual Likelihoods for Observed Evidence
+----------------------------------------------------------------------
+Feature                   Observed   P(obs|Spam)   P(obs|Ham)       LR
+----------------------------------------------------------------------
+Contains FREE                  Yes         0.7000       0.1000     7.00
+ALL CAPS subject               Yes         0.6000       0.0500    12.00
+In contacts                     No         0.9500       0.2000     4.75
+JOINT (product)                            0.399000     0.001000
+
+STEP 3: Posteriors
+  P(Spam|Evidence) = 0.07980000 / 0.08060000 = 0.99008 = 99.01%
+  P(Ham|Evidence)  = 0.00080000 / 0.08060000 = 0.00992 = 0.99%
+
+→ CLASSIFICATION: SPAM
+
+Metrics:
+  Accuracy:  0.9536 (95.4%)
+  Precision: 0.8712
+  Recall:    0.8640
+  F1 Score:  0.8676</code></pre></div>
+<hr>
+<h2>KEY TAKEAWAY FROM PROBLEM 3</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>┌──────────────────────────────────────────────────────────────────┐
+</span>│                                                                  │
+│  LESSON: Multiple evidence features COMPOUND through products.  │
+│                                                                  │
+│  FROM PROBLEM 1:                                                 │
+│  → Same P(A|B) = P(B|A)P(A)/P(B) structure                     │
+│  → Same binary classification framework                         │
+│                                                                  │
+│  FROM PROBLEM 2:                                                 │
+│  → Same denominator = sum over all hypotheses pattern            │
+│  → Same numerator table approach                                 │
+│                                                                  │
+│  NEW IN THIS PROBLEM:                                            │
+│  → CONDITIONAL INDEPENDENCE assumption                           │
+│    → Joint likelihood = PRODUCT of individual likelihoods        │
+│    → Reduces exponential parameters to linear                    │
+│  → LIKELIHOOD RATIO view                                         │
+│    → Each feature multiplies the odds                            │
+│    → Features "vote" for or against each hypothesis              │
+│  → LAPLACE SMOOTHING                                             │
+│    → Prevents zero-frequency catastrophe                         │
+│  → LOG SPACE computation (previewed, detailed in Problem 5)      │
+│                                                                  │
+│  THE "NAIVE" LABEL IS MISLEADING:                                │
+│  → The assumption is often wrong                                 │
+│  → But the classifier is often RIGHT                             │
+│  → Simple, fast, interpretable, effective                        │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘</code></pre></div>
+<hr>
+<h2>🌉 BRIDGE TO PROBLEM 4</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>WHAT WE MASTERED:
+</span>    → Problem 1: Binary Bayes (2 hypotheses, 1 evidence)
+    → Problem 2: Multi-hypothesis Bayes (N hypotheses, 1 evidence)
+    → Problem 3: Multiple evidence (2 hypotheses, M features, independence)
+
+WHAT'S NEXT — THE COMBINATION:
+    → What if we have N hypotheses AND M features?
+    → A patient has 5 symptoms. Which of 4 diseases is most likely?
+    → This combines Problem 2's multi-hypothesis framework
+      with Problem 3's multiple-feature products
+
+PROBLEM 4: The Medical Differential Diagnosis
+    → Patient presents with: fever, cough, fatigue, no rash, no joint pain
+    → Possible diseases: Flu, COVID, Mono, Malaria
+    → Each disease has different symptom profiles
+    → Rank diseases by posterior probability
+    → Introduce the concept of DECISION MAKING under uncertainty</code></pre></div>
+<hr>
+</div>
+</div>
+
+<!-- ========== data-index="7" ========== -->
+
+        </div>
+
+        <div class="nav-bar">
+            <a href="problem-2.html" class="nav-button prev">← Previous Problem</a>
+            <div class="page-info">
+                <a href="index.html" class="nav-button home">📚 Table of Contents</a><br>
+                <span style="margin-top:8px;display:block">Problem 3 of 9</span>
+            </div>
+            <a href="problem-4.html" class="nav-button next">Next Problem →</a>
+        </div>
+    </div>
+
+    
+    <div id="progress-track"><div id="progress-fill"></div></div>
+    <div id="progress-pct">0%</div>
+
+
+    <script>
+    const fill = document.getElementById('progress-fill');
+    const pct  = document.getElementById('progress-pct');
+    function updateProgress() {
+        const scrollTop = window.scrollY;
+        const docHeight = document.body.scrollHeight - window.innerHeight;
+        const scrolled  = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+        fill.style.height = scrolled + '%';
+        pct.textContent   = Math.round(scrolled) + '%';
+    }
+    window.addEventListener('scroll', updateProgress);
+    updateProgress();
+
+    document.addEventListener('keydown', function(e) {
+        if (['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+        if (e.key === 'ArrowLeft') {
+            const b = document.querySelector('.nav-button.prev');
+            if (b && !b.classList.contains('disabled')) window.location.href = b.href;
+        }
+        if (e.key === 'ArrowRight') {
+            const b = document.querySelector('.nav-button.next');
+            if (b && !b.classList.contains('disabled')) window.location.href = b.href;
+        }
+    });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Problem 1: The Lying Disease Test — Bayes' Theorem Complete Guide</title>
+    <link rel="icon" type="image/png" href="images/favicon.png">    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.75;
+            color: #1a202c;
+            background-color: #f7fafc;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            box-shadow: 0 0 30px rgba(0,0,0,0.08);
+            padding: 48px 52px;
+        }
+        
+        .content { max-width: 950px; margin: 0 auto; color: #1a202c; }
+        .content h1 {
+            color: #1a202c; margin: 32px 0 20px;
+            padding-bottom: 12px;
+            border-bottom: 4px solid #8b5cf6;
+            font-size: 2.1em;
+            font-weight: 700;
+        }
+        .content h2 {
+            color: #1a202c; margin: 28px 0 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #a78bfa;
+            font-size: 1.6em;
+            font-weight: 600;
+        }
+        .content h3 { color: #1a202c; margin: 22px 0 12px; font-size: 1.3em; font-weight: 600; }
+        .content h4 { color: #2d3748; margin: 18px 0 10px; font-size: 1.1em; font-weight: 600; }
+        .content p  { margin-bottom: 16px; line-height: 1.8; color: #1a202c; }
+        .content ul, .content ol { margin: 12px 0 18px 30px; color: #1a202c; }
+        .content li { margin-bottom: 8px; line-height: 1.75; color: #1a202c; }
+        .content hr { border: none; border-top: 2px solid #e2e8f0; margin: 26px 0; }
+        .content pre {
+            background: #f7fafc !important;
+            border: 1px solid #cbd5e0 !important;
+            border-left: 4px solid #8b5cf6 !important;
+            padding: 18px !important; overflow-x: auto; margin: 18px 0; border-radius: 6px;
+            font-family: 'Consolas','Monaco','Courier New',monospace !important;
+            font-size: 0.9em !important;
+        }
+        .content pre:not([style*="color"]) { color: #1a202c !important; }
+        .content code {
+            font-family: 'Consolas','Monaco','Courier New',monospace !important;
+            font-size: 0.88em !important;
+        }
+        .content code:not(pre code) {
+            background: #ede9fe !important;
+            color: #1a202c !important;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        .content pre code { background: transparent !important; padding: 0; }
+        .content table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .content th {
+            background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+            color: white; padding: 12px 16px; text-align: left;
+            font-weight: 600;
+        }
+        .content td { padding: 11px 16px; border: 1px solid #e2e8f0; color: #1a202c; }
+        .content tr:nth-child(even) td { background: #faf5ff; }
+        .content blockquote {
+            border-left: 4px solid #8b5cf6; background: #faf5ff;
+            padding: 14px 20px; margin: 18px 0; border-radius: 0 6px 6px 0;
+            color: #1a202c;
+        }
+        .content strong { color: #1a202c; font-weight: 600; }
+        .px-2 { padding: 0; }
+        .chat-message { background: transparent; padding: 0; margin: 0; }
+
+        /* Bottom nav bar only */
+        .nav-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 24px 0;
+            margin-top: 50px;
+            border-top: 3px solid #a78bfa;
+        }
+        .nav-button {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 12px 26px;
+            background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+            color: white !important; text-decoration: none;
+            border-radius: 8px; font-weight: 600; font-size: 0.95em;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(139,92,246,0.35);
+        }
+        .nav-button:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(139,92,246,0.5); }
+        .nav-button.disabled { background: #cbd5e1; box-shadow: none; pointer-events: none; }
+        .nav-button.home {
+            background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
+            box-shadow: 0 2px 8px rgba(99,102,241,0.35);
+        }
+        .nav-button.home:hover { box-shadow: 0 4px 14px rgba(99,102,241,0.5); }
+        .page-info { color: #718096; font-size: 0.9em; text-align: center; }
+
+        /* Progress bar */
+        #progress-track {
+            position: fixed; top: 20px; right: 20px;
+            width: 10px; height: 150px;
+            background: rgba(139,92,246,0.2);
+            border: 2px solid #8b5cf6;
+            border-radius: 6px; overflow: hidden; z-index: 1000;
+        }
+        #progress-fill {
+            width: 100%;
+            background: linear-gradient(180deg, #8b5cf6, #7c3aed);
+            height: 0%;
+            transition: height 0.15s ease;
+        }
+        #progress-pct {
+            position: fixed; top: 0px; right: 16px;
+            color: #7c3aed; font-size: 14px; font-weight: bold;
+            z-index: 1001;
+            text-shadow: 0 1px 2px rgba(255,255,255,0.9);
+            line-height: 20px;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="content">
+            <div class="chat-message" data-index="1">
+<div class="px-2"><h1>BAYES' THEOREM — THE COMPLETE GUIDE</h1>
+<h2>Problem 1 of 10: The Lying Disease Test</h2>
+<hr>
+<h2>🎯 DIFFICULTY: VERY EASY (Foundation Stone)</h2>
+<hr>
+<h2>THE HYPOTHETICAL PROBLEM</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>A city has 100,000 people.
+</span>A rare disease affects 1 in every 1,000 people.
+A test exists to detect this disease.
+
+    → If a person HAS the disease, the test says "POSITIVE" 99% of the time.
+    → If a person DOES NOT have the disease, the test WRONGLY says "POSITIVE" 5% of the time.
+
+You just tested POSITIVE.
+
+QUESTION: What is the ACTUAL probability that you have the disease?
+
+Most people instinctively say: "99%! The test is 99% accurate!"
+The real answer will SHOCK you.</code></pre></div>
+<hr>
+<h2>HOW TO APPROACH IT</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>Step 1 → Do NOT jump to the test accuracy number
+</span>Step 2 → Ask: "How common is this disease in the first place?"
+Step 3 → Ask: "How many HEALTHY people also get a wrong positive?"
+Step 4 → Realize: If the disease is RARE, most positives come from HEALTHY people
+Step 5 → We need a formula that COMBINES all of this
+Step 6 → That formula is BAYES' THEOREM</code></pre></div>
+<hr>
+<h2>BEFORE THE FORMULA — THINK WITH COUNTS (The Intuition)</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>Population: 100,000 people
+</span>
+ACTUALLY SICK:
+    → 100,000 × (1/1000) = 100 people have the disease
+
+ACTUALLY HEALTHY:
+    → 100,000 - 100 = 99,900 people are healthy
+
+NOW APPLY THE TEST:
+
+Among 100 SICK people:
+    → 99% test positive = 99 TRUE positives  ✓ (correctly caught)
+    → 1% test negative  = 1  FALSE negative   ✗ (missed)
+
+Among 99,900 HEALTHY people:
+    → 5% test positive  = 4,995 FALSE positives ✗ (wrongly alarmed)
+    → 95% test negative = 94,905 TRUE negatives ✓ (correctly cleared)
+
+TOTAL people who got a POSITIVE result:
+    → 99 (truly sick) + 4,995 (falsely alarmed) = 5,094
+
+YOUR ANSWER:
+    → You tested positive
+    → Probability you are ACTUALLY sick = 99 / 5,094 = 0.01943
+    → That is approximately 1.94%
+
+NOT 99%.
+NOT even close.
+LESS THAN 2%.</code></pre></div>
+<hr>
+<h2>THE VISUAL TRUTH TABLE</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>┌─────────────────────────────────────────────────────────┐
+</span>│                    100,000 PEOPLE                        │
+├──────────────────────┬──────────────────────────────────┤
+│   100 SICK           │         99,900 HEALTHY           │
+├──────────────────────┼──────────────────────────────────┤
+│ 99 test +  (TRUE +)  │  4,995 test +  (FALSE +)        │
+│  1 test -  (FALSE -) │ 94,905 test -  (TRUE -)         │
+├──────────────────────┴──────────────────────────────────┤
+│                                                          │
+│  TOTAL POSITIVE = 99 + 4,995 = 5,094                   │
+│  P(Sick | Positive) = 99 / 5,094 = 1.94%               │
+│                                                          │
+│  The FALSE POSITIVES from the huge healthy group         │
+│  COMPLETELY SWAMP the true positives from the            │
+│  tiny sick group.                                        │
+└─────────────────────────────────────────────────────────┘</code></pre></div>
+<hr>
+<h2>NOW — THE FORMAL FORMULA</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>BAYES' THEOREM:
+</span>
+                    P(B|A) × P(A)
+    P(A|B) = ─────────────────────────
+                      P(B)
+
+TRANSLATION TO OUR PROBLEM:
+
+    A = Person has the disease
+    B = Test result is positive
+
+                    P(Positive|Sick) × P(Sick)
+P(Sick|Positive) = ──────────────────────────────
+                           P(Positive)</code></pre></div>
+<hr>
+<h2>NAMING EVERY PIECE</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>┌────────────────────────────────────────────────────────────────┐
+</span>│  TERM              │  NAME             │  VALUE    │  MEANING  │
+├────────────────────┼───────────────────┼───────────┼───────────┤
+│  P(A)              │  PRIOR            │  0.001    │  How rare │
+│                    │                   │           │  is the   │
+│                    │                   │           │  disease  │
+│                    │                   │           │  BEFORE   │
+│                    │                   │           │  any test │
+├────────────────────┼───────────────────┼───────────┼───────────┤
+│  P(B|A)            │  LIKELIHOOD       │  0.99     │  If sick, │
+│                    │  (Sensitivity)    │           │  how good │
+│                    │  (True Positive   │           │  is the   │
+│                    │   Rate)           │           │  test at  │
+│                    │                   │           │  catching │
+│                    │                   │           │  it       │
+├────────────────────┼───────────────────┼───────────┼───────────┤
+│  P(B|¬A)           │  FALSE POSITIVE   │  0.05     │  If       │
+│                    │  RATE             │           │  healthy, │
+│                    │                   │           │  how often│
+│                    │                   │           │  does the │
+│                    │                   │           │  test LIE │
+├────────────────────┼───────────────────┼───────────┼───────────┤
+│  P(B)              │  TOTAL EVIDENCE   │  computed │  Overall  │
+│                    │  (Marginal        │  below    │  chance   │
+│                    │   Likelihood)     │           │  of ANY   │
+│                    │                   │           │  positive │
+├────────────────────┼───────────────────┼───────────┼───────────┤
+│  P(A|B)            │  POSTERIOR        │  ? solve  │  AFTER    │
+│                    │                   │           │  seeing   │
+│                    │                   │           │  evidence │
+│                    │                   │           │  what do  │
+│                    │                   │           │  we NOW   │
+│                    │                   │           │  believe  │
+└────────────────────┴───────────────────┴───────────┴───────────┘</code></pre></div>
+<hr>
+<h2>HOW P(B) IS COMPUTED — THE DENOMINATOR</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>P(B) = P(B|A) × P(A)  +  P(B|¬A) × P(¬A)
+</span>
+TRANSLATION:
+    Total positives = (Sick people who test +) + (Healthy people who test +)
+
+P(B) = (0.99 × 0.001) + (0.05 × 0.999)
+P(B) = 0.00099 + 0.04995
+P(B) = 0.05094
+
+THIS is the Law of Total Probability.
+It ensures we account for ALL ways a positive can happen.</code></pre></div>
+<hr>
+<h2>THE FULL CALCULATION</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>                    P(B|A) × P(A)
+</span>P(A|B) = ─────────────────────────────────────
+          P(B|A) × P(A) + P(B|¬A) × P(¬A)
+
+                    0.99 × 0.001
+       = ─────────────────────────────────────
+         (0.99 × 0.001) + (0.05 × 0.999)
+
+              0.00099
+       = ─────────────────
+         0.00099 + 0.04995
+
+              0.00099
+       = ─────────────────
+              0.05094
+
+       = 0.01943
+
+       ≈ 1.94%</code></pre></div>
+<hr>
+<h2>HOW TO SOLVE IT — THE UNIVERSAL 5-STEP METHOD</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>STEP 1: IDENTIFY what you WANT
+</span>    → P(Sick | Positive) — the POSTERIOR
+
+STEP 2: IDENTIFY what you KNOW
+    → P(Sick)              = 0.001   — the PRIOR
+    → P(Positive | Sick)   = 0.99    — the LIKELIHOOD
+    → P(Positive | Healthy)= 0.05    — the FALSE POSITIVE RATE
+
+STEP 3: COMPUTE the DENOMINATOR
+    → P(Positive) = (0.99 × 0.001) + (0.05 × 0.999) = 0.05094
+
+STEP 4: PLUG into BAYES
+    → (0.99 × 0.001) / 0.05094 = 0.01943
+
+STEP 5: INTERPRET
+    → Despite testing positive, only ~2% chance of disease
+    → This is why doctors order SECOND confirmatory tests</code></pre></div>
+<hr>
+<h2>WHAT COULD BE DONE</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>→ Lower the false positive rate (use a better test)
+</span>→ Test only HIGH-RISK populations (increases the prior)
+→ Use TWO independent tests sequentially
+→ Use the posterior from Test 1 as the prior for Test 2
+  (This is called BAYESIAN UPDATING — covered in Problem 6)</code></pre></div>
+<hr>
+<h2>WHAT SHOULD DO</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>✓ ALWAYS start by identifying the PRIOR (base rate)
+</span>✓ ALWAYS compute the denominator carefully — it has TWO parts
+✓ ALWAYS sanity-check: if prior is tiny, posterior should be small
+✓ ALWAYS label which probability is which BEFORE plugging in
+✓ ALWAYS ask: "What are ALL the ways the evidence could appear?"</code></pre></div>
+<hr>
+<h2>WHAT SHOULD NOT DO</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>✗ DO NOT confuse P(A|B) with P(B|A)
+</span>    → P(Positive|Sick) = 0.99
+    → P(Sick|Positive) = 0.0194
+    → These are COMPLETELY DIFFERENT numbers
+    → This confusion is called the PROSECUTOR'S FALLACY
+    → People go to prison because of this error
+
+✗ DO NOT ignore the base rate (prior)
+    → A 99% accurate test means NOTHING if the disease affects 1 in a million
+    → The rarer the condition, the MORE false positives dominate
+
+✗ DO NOT assume P(B) = P(B|A)
+    → The total probability of evidence is NOT just from the hypothesis you care about</code></pre></div>
+<hr>
+<h2>WHEN TO USE BAYES' THEOREM</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>✓ You have a HYPOTHESIS (disease, spam, fraud, guilt)
+</span>✓ You observe EVIDENCE (test result, email features, transaction pattern)
+✓ You want to UPDATE your belief about the hypothesis GIVEN the evidence
+✓ You know or can estimate:
+    → The prior probability of the hypothesis
+    → How likely the evidence is IF the hypothesis is true
+    → How likely the evidence is IF the hypothesis is false</code></pre></div>
+<hr>
+<h2>WHEN NOT TO USE</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>✗ When you have NO prior information at all (use frequentist methods)
+</span>✗ When events are NOT conditional on each other
+✗ When you are computing a simple unconditional probability
+✗ When the question is just "What is P(A AND B)?" — use multiplication rule
+✗ When the question is "What is P(A OR B)?" — use addition rule</code></pre></div>
+<hr>
+<h2>HOW IT ONLY WORKS — INTERNAL MECHANICS</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>THE CORE INSIGHT:
+</span>
+    Bayes' Theorem is a REVERSAL MACHINE.
+
+    You know:  P(Evidence | Hypothesis)   → Forward direction
+    You want:  P(Hypothesis | Evidence)   → Reverse direction
+
+    The theorem FLIPS the conditioning by weighing:
+        → How LIKELY the evidence is under the hypothesis (Likelihood)
+        → How PROBABLE the hypothesis was BEFORE evidence (Prior)
+        → How COMMON the evidence is OVERALL (Normalizer)
+
+THE MATHEMATICAL DERIVATION:
+
+    From the definition of conditional probability:
+
+        P(A|B) = P(A ∩ B) / P(B)          ... (1)
+        P(B|A) = P(A ∩ B) / P(A)          ... (2)
+
+    From (2): P(A ∩ B) = P(B|A) × P(A)
+
+    Substitute into (1):
+
+        P(A|B) = P(B|A) × P(A) / P(B)
+
+    That's it. That's Bayes' Theorem.
+    It comes from the SYMMETRY of joint probability.
+
+THE DENOMINATOR MECHANICS:
+
+    P(B) acts as a NORMALIZER.
+    It ensures P(A|B) + P(¬A|B) = 1.
+    Without it, the numerator alone would NOT be a valid probability.
+
+    P(B) is computed by considering ALL possible ways B can happen:
+        → B happens when A is true:  P(B|A) × P(A)
+        → B happens when A is false: P(B|¬A) × P(¬A)
+        → Sum = P(B)
+
+    This is the LAW OF TOTAL PROBABILITY.</code></pre></div>
+<hr>
+<h2>COMMON PITFALLS AND FAILURE MODES</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>PITFALL 1: BASE RATE NEGLECT
+</span>    → Humans naturally ignore how rare/common something is
+    → A "99% accurate" test for a 1-in-million event is almost USELESS
+    → Always ask: "What is the prior?"
+
+PITFALL 2: THE PROSECUTOR'S FALLACY
+    → "The probability of this evidence given innocence is 1 in a million"
+    → DOES NOT MEAN "probability of innocence given this evidence is 1 in a million"
+    → P(E|Innocent) ≠ P(Innocent|E)
+
+PITFALL 3: FORGETTING THE OTHER PATHWAY
+    → The denominator MUST include BOTH paths to the evidence
+    → Forgetting P(B|¬A) × P(¬A) makes the answer wrong
+
+PITFALL 4: WRONG PRIOR SELECTION
+    → Using the wrong base rate (e.g., hospital prevalence vs population prevalence)
+    → The prior MUST match the population you're sampling from
+
+PITFALL 5: ASSUMING INDEPENDENCE WHEN IT DOESN'T EXIST
+    → If you run the SAME test twice, results may be correlated
+    → Two truly independent tests are needed for valid sequential updating</code></pre></div>
+<hr>
+<h2>SCALABILITY CONSIDERATIONS</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>FOR THIS SIMPLE BINARY CASE:
+</span>    → Only 2 hypotheses: Sick or Healthy
+    → Only 1 piece of evidence: Positive or Negative
+    → Computation: trivial — a single fraction
+
+AS COMPLEXITY GROWS (covered in later problems):
+    → Multiple hypotheses → denominator becomes a SUM over all hypotheses
+    → Multiple evidence variables → likelihood becomes a PRODUCT (Naive Bayes)
+    → Continuous variables → sums become INTEGRALS
+    → High dimensions → exact computation becomes INTRACTABLE → need MCMC</code></pre></div>
+<hr>
+<h2>INTERPRETABILITY CONSIDERATIONS</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>STRENGTHS:
+</span>    → Every component has a clear real-world meaning
+    → Prior = what we believed BEFORE
+    → Likelihood = how well evidence fits the hypothesis
+    → Posterior = what we believe AFTER
+    → Full audit trail of reasoning
+
+LIMITATIONS:
+    → Prior selection can be SUBJECTIVE
+    → Different priors → different posteriors
+    → Must clearly STATE and JUSTIFY your prior
+    → Sensitivity analysis: try multiple priors, see if conclusion changes</code></pre></div>
+<hr>
+<h2>COMPLETE WORKING CODE</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ============================================================</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># PROBLEM 1: THE LYING DISEASE TEST</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># Bayes' Theorem — Binary Hypothesis, Single Evidence</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ============================================================</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ---- GIVEN VALUES ----</span><span>
+</span><span>prior_sick </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.001</span><span>                    </span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># P(Sick) — base rate of disease</span><span>
+</span><span>prior_healthy </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">1</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">-</span><span> prior_sick        </span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># P(Healthy) = P(¬Sick)</span><span>
+</span>
+<span>sensitivity </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.99</span><span>                    </span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># P(Positive | Sick) — true positive rate</span><span>
+</span><span>false_positive_rate </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.05</span><span>            </span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># P(Positive | Healthy) — false alarm rate</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ---- STEP 1: COMPUTE THE DENOMINATOR (Total Probability of Positive) ----</span><span>
+</span><span>p_positive_total </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>sensitivity </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> prior_sick</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">+</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>false_positive_rate </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> prior_healthy</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ---- STEP 2: APPLY BAYES' THEOREM ----</span><span>
+</span><span>posterior_sick_given_positive </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>sensitivity </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> prior_sick</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">/</span><span> p_positive_total
+</span>
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ---- STEP 3: DISPLAY RESULTS ----</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"="</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">60</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"BAYES' THEOREM — DISEASE TEST"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"="</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">60</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"Prior P(Sick)                    = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">prior_sick</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"Prior P(Healthy)                 = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">prior_healthy</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"Sensitivity P(+|Sick)            = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">sensitivity</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"False Positive Rate P(+|Healthy) = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">false_positive_rate</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"-"</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">60</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"P(Positive overall)              = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">p_positive_total</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.5f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"P(Sick | Positive)               = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">posterior_sick_given_positive</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.5f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"P(Sick | Positive)               = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">posterior_sick_given_positive</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">*</span><span class="token string-interpolation interpolation" style="color: rgb(54, 172, 170);">100</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.2f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">%"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"="</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">60</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ---- STEP 4: VERIFY WITH COUNTING METHOD ----</span><span>
+</span><span>population </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">100_000</span><span>
+</span><span>sick_count </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token builtin">int</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>population </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> prior_sick</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span>healthy_count </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> population </span><span class="token" style="color: rgb(57, 58, 52);">-</span><span> sick_count
+</span>
+<span>true_positives </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> sick_count </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> sensitivity
+</span><span>false_positives </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> healthy_count </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> false_positive_rate
+</span><span>total_positives </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> true_positives </span><span class="token" style="color: rgb(57, 58, 52);">+</span><span> false_positives
+</span>
+<span>posterior_by_counting </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> true_positives </span><span class="token" style="color: rgb(57, 58, 52);">/</span><span> total_positives
+</span>
+<span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"\nVERIFICATION BY COUNTING:"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"Population                       = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">population</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">,</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"Sick people                      = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">sick_count</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">,</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"Healthy people                   = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">healthy_count</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">,</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"True positives  (sick &amp; test +)  = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">true_positives</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">,.0f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"False positives (healthy &amp; test +)= </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">false_positives</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">,.0f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"Total positives                  = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">total_positives</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">,.0f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"P(Sick | Positive) by counting   = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">posterior_by_counting</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.5f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"P(Sick | Positive) by counting   = </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">posterior_by_counting</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">*</span><span class="token string-interpolation interpolation" style="color: rgb(54, 172, 170);">100</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.2f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">%"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ---- STEP 5: SENSITIVITY ANALYSIS — How does PRIOR affect POSTERIOR? ----</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"\n"</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">+</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"="</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">60</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"SENSITIVITY ANALYSIS: Effect of Prior on Posterior"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"="</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">60</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'Prior P(Sick)'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&lt;20</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'Posterior P(Sick|+)'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&lt;25</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'Interpretation'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"-"</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">60</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span>test_priors </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">[</span><span class="token" style="color: rgb(54, 172, 170);">0.0001</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.001</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.01</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.05</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.10</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.20</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.50</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> p </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> test_priors</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>    denom </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>sensitivity </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> p</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">+</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>false_positive_rate </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(54, 172, 170);">1</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">-</span><span> p</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span>    post </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>sensitivity </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> p</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">/</span><span> denom
+</span><span>    </span><span class="token" style="color: rgb(0, 0, 255);">if</span><span> post </span><span class="token" style="color: rgb(57, 58, 52);">&lt;</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.05</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>        note </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"Almost certainly healthy"</span><span>
+</span><span>    </span><span class="token" style="color: rgb(0, 0, 255);">elif</span><span> post </span><span class="token" style="color: rgb(57, 58, 52);">&lt;</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.30</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>        note </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"Probably healthy, retest"</span><span>
+</span><span>    </span><span class="token" style="color: rgb(0, 0, 255);">elif</span><span> post </span><span class="token" style="color: rgb(57, 58, 52);">&lt;</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.70</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>        note </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"Uncertain, need more info"</span><span>
+</span><span>    </span><span class="token" style="color: rgb(0, 0, 255);">elif</span><span> post </span><span class="token" style="color: rgb(57, 58, 52);">&lt;</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.95</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>        note </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"Probably sick"</span><span>
+</span><span>    </span><span class="token" style="color: rgb(0, 0, 255);">else</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>        note </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"Almost certainly sick"</span><span>
+</span><span>    </span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">p</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&lt;20.4f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">post</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&lt;25.5f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">note</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ---- STEP 6: VISUALIZATION ----</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"\n"</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">+</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"="</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">60</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"VISUAL: Who are the POSITIVE people?"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"="</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">60</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span>bar_true </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token builtin">int</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>true_positives </span><span class="token" style="color: rgb(57, 58, 52);">/</span><span> total_positives </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">50</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span>bar_false </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">50</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">-</span><span> bar_true
+</span>
+<span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"True Positives  : </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'█'</span><span class="token string-interpolation interpolation"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">*</span><span class="token string-interpolation interpolation"> bar_true</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> (</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">true_positives</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.0f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">)"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"False Positives : </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'░'</span><span class="token string-interpolation interpolation"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">*</span><span class="token string-interpolation interpolation"> bar_false</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> (</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">false_positives</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.0f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">)"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"\nOut of every </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">total_positives</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.0f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> positive results:"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"  → Only </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">true_positives</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.0f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> are truly sick"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"  → A whopping </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">false_positives</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.0f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> are healthy but falsely alarmed"</span><span class="token" style="color: rgb(57, 58, 52);">)</span></code></pre></div>
+<hr>
+<h2>EXPECTED OUTPUT</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>============================================================
+</span>BAYES' THEOREM — DISEASE TEST
+============================================================
+Prior P(Sick)                    = 0.001
+Prior P(Healthy)                 = 0.999
+Sensitivity P(+|Sick)            = 0.99
+False Positive Rate P(+|Healthy) = 0.05
+------------------------------------------------------------
+P(Positive overall)              = 0.05094
+P(Sick | Positive)               = 0.01943
+P(Sick | Positive)               = 1.94%
+============================================================
+
+VERIFICATION BY COUNTING:
+Population                       = 100,000
+Sick people                      = 100
+Healthy people                   = 99,900
+True positives  (sick &amp; test +)  = 99
+False positives (healthy &amp; test +)= 4,995
+Total positives                  = 5,094
+P(Sick | Positive) by counting   = 0.01943
+P(Sick | Positive) by counting   = 1.94%
+
+============================================================
+SENSITIVITY ANALYSIS: Effect of Prior on Posterior
+============================================================
+Prior P(Sick)        Posterior P(Sick|+)   Interpretation
+------------------------------------------------------------
+0.0001               0.00198               Almost certainly healthy
+0.0010               0.01943               Almost certainly healthy
+0.0100               0.16625               Probably healthy, retest
+0.0500               0.51049               Uncertain, need more info
+0.1000               0.68750               Uncertain, need more info
+0.2000               0.83193               Probably sick
+0.5000               0.95192               Almost certainly sick</code></pre></div>
+<hr>
+<h2>KEY TAKEAWAY FROM PROBLEM 1</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>┌──────────────────────────────────────────────────────────────────┐
+</span>│                                                                  │
+│  LESSON: The PRIOR (base rate) is the SILENT KING of Bayes.     │
+│                                                                  │
+│  → A "99% accurate" test can give a "2% real probability"       │
+│  → The rarer the event, the more false positives DOMINATE       │
+│  → Bayes' Theorem is a REVERSAL MACHINE:                        │
+│      Forward: P(Evidence | Hypothesis) → you know this          │
+│      Reverse: P(Hypothesis | Evidence) → you want this          │
+│  → The denominator P(B) is the NORMALIZER that makes it work    │
+│  → COUNTING method and FORMULA method give the SAME answer      │
+│                                                                  │
+│  FORMULA LOCKED IN:                                              │
+│                                                                  │
+│              P(B|A) × P(A)                                       │
+│  P(A|B) = ─────────────────                                     │
+│                 P(B)                                              │
+│                                                                  │
+│  where P(B) = P(B|A)×P(A) + P(B|¬A)×P(¬A)                     │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘</code></pre></div>
+<hr>
+<h2>🌉 BRIDGE TO PROBLEM 2</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>WHAT WE MASTERED:
+</span>    → Bayes with 2 hypotheses (Sick / Healthy)
+    → Single piece of evidence (one test result)
+
+WHAT COMES NEXT:
+    → What if there are MORE THAN 2 hypotheses?
+    → What if you need to pick from 3, 4, or N possible causes?
+    → Problem 2: A machine breaks down.
+      Three possible causes. One clue observed.
+      Which cause is MOST LIKELY?
+    → The denominator becomes a SUM over ALL hypotheses.
+    → This is the GENERALIZED form of Bayes.</code></pre></div>
+<hr>
+</div>
+</div>
+
+<!-- ========== data-index="3" ========== -->
+
+        </div>
+
+        <div class="nav-bar">
+            <a href="index.html" class="nav-button prev">📚 Home</a>
+            <div class="page-info">
+                <a href="index.html" class="nav-button home">📚 Table of Contents</a><br>
+                <span style="margin-top:8px;display:block">Problem 1 of 1</span>
+            </div>
+            <a href="problem-2.html" class="nav-button next">Next Problem →</a>
+        </div>
+    </div>
+
+    
+    <div id="progress-track"><div id="progress-fill"></div></div>
+    <div id="progress-pct">0%</div>
+
+
+    <script>
+    const fill = document.getElementById('progress-fill');
+    const pct  = document.getElementById('progress-pct');
+    function updateProgress() {
+        const scrollTop = window.scrollY;
+        const docHeight = document.body.scrollHeight - window.innerHeight;
+        const scrolled  = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+        fill.style.height = scrolled + '%';
+        pct.textContent   = Math.round(scrolled) + '%';
+    }
+    window.addEventListener('scroll', updateProgress);
+    updateProgress();
+
+    document.addEventListener('keydown', function(e) {
+        if (['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+        if (e.key === 'ArrowLeft') {
+            const b = document.querySelector('.nav-button.prev');
+            if (b && !b.classList.contains('disabled')) window.location.href = b.href;
+        }
+        if (e.key === 'ArrowRight') {
+            const b = document.querySelector('.nav-button.next');
+            if (b && !b.classList.contains('disabled')) window.location.href = b.href;
+        }
+    });
+    </script>
+
+</body>
+</html>

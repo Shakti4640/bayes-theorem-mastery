@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Problem 2: Multi-Hypothesis Bayes: The Broken Machine — Bayes' Theorem Complete Guide</title>
+    <link rel="icon" type="image/png" href="images/favicon.png">    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.75;
+            color: #1a202c;
+            background-color: #f7fafc;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            box-shadow: 0 0 30px rgba(0,0,0,0.08);
+            padding: 48px 52px;
+        }
+        
+        .content { max-width: 950px; margin: 0 auto; color: #1a202c; }
+        .content h1 {
+            color: #1a202c; margin: 32px 0 20px;
+            padding-bottom: 12px;
+            border-bottom: 4px solid #8b5cf6;
+            font-size: 2.1em;
+            font-weight: 700;
+        }
+        .content h2 {
+            color: #1a202c; margin: 28px 0 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #a78bfa;
+            font-size: 1.6em;
+            font-weight: 600;
+        }
+        .content h3 { color: #1a202c; margin: 22px 0 12px; font-size: 1.3em; font-weight: 600; }
+        .content h4 { color: #2d3748; margin: 18px 0 10px; font-size: 1.1em; font-weight: 600; }
+        .content p  { margin-bottom: 16px; line-height: 1.8; color: #1a202c; }
+        .content ul, .content ol { margin: 12px 0 18px 30px; color: #1a202c; }
+        .content li { margin-bottom: 8px; line-height: 1.75; color: #1a202c; }
+        .content hr { border: none; border-top: 2px solid #e2e8f0; margin: 26px 0; }
+        .content pre {
+            background: #f7fafc !important;
+            border: 1px solid #cbd5e0 !important;
+            border-left: 4px solid #8b5cf6 !important;
+            padding: 18px !important; overflow-x: auto; margin: 18px 0; border-radius: 6px;
+            font-family: 'Consolas','Monaco','Courier New',monospace !important;
+            font-size: 0.9em !important;
+        }
+        .content pre:not([style*="color"]) { color: #1a202c !important; }
+        .content code {
+            font-family: 'Consolas','Monaco','Courier New',monospace !important;
+            font-size: 0.88em !important;
+        }
+        .content code:not(pre code) {
+            background: #ede9fe !important;
+            color: #1a202c !important;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        .content pre code { background: transparent !important; padding: 0; }
+        .content table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .content th {
+            background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+            color: white; padding: 12px 16px; text-align: left;
+            font-weight: 600;
+        }
+        .content td { padding: 11px 16px; border: 1px solid #e2e8f0; color: #1a202c; }
+        .content tr:nth-child(even) td { background: #faf5ff; }
+        .content blockquote {
+            border-left: 4px solid #8b5cf6; background: #faf5ff;
+            padding: 14px 20px; margin: 18px 0; border-radius: 0 6px 6px 0;
+            color: #1a202c;
+        }
+        .content strong { color: #1a202c; font-weight: 600; }
+        .px-2 { padding: 0; }
+        .chat-message { background: transparent; padding: 0; margin: 0; }
+
+        /* Bottom nav bar only */
+        .nav-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 24px 0;
+            margin-top: 50px;
+            border-top: 3px solid #a78bfa;
+        }
+        .nav-button {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 12px 26px;
+            background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+            color: white !important; text-decoration: none;
+            border-radius: 8px; font-weight: 600; font-size: 0.95em;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(139,92,246,0.35);
+        }
+        .nav-button:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(139,92,246,0.5); }
+        .nav-button.disabled { background: #cbd5e1; box-shadow: none; pointer-events: none; }
+        .nav-button.home {
+            background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
+            box-shadow: 0 2px 8px rgba(99,102,241,0.35);
+        }
+        .nav-button.home:hover { box-shadow: 0 4px 14px rgba(99,102,241,0.5); }
+        .page-info { color: #718096; font-size: 0.9em; text-align: center; }
+
+        /* Progress bar */
+        #progress-track {
+            position: fixed; top: 20px; right: 20px;
+            width: 10px; height: 150px;
+            background: rgba(139,92,246,0.2);
+            border: 2px solid #8b5cf6;
+            border-radius: 6px; overflow: hidden; z-index: 1000;
+        }
+        #progress-fill {
+            width: 100%;
+            background: linear-gradient(180deg, #8b5cf6, #7c3aed);
+            height: 0%;
+            transition: height 0.15s ease;
+        }
+        #progress-pct {
+            position: fixed; top: 0px; right: 16px;
+            color: #7c3aed; font-size: 14px; font-weight: bold;
+            z-index: 1001;
+            text-shadow: 0 1px 2px rgba(255,255,255,0.9);
+            line-height: 20px;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="content">
+            <div class="chat-message" data-index="3">
+<div class="px-2"><h1>BAYES' THEOREM — PROBLEM 2 OF 10</h1>
+<h2>Multi-Hypothesis Bayes: The Broken Machine</h2>
+<hr>
+<h2>🎯 DIFFICULTY: VERY EASY → EASY (Building on Problem 1)</h2>
+<hr>
+<h2>WHAT CHANGED FROM PROBLEM 1</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>Problem 1: TWO hypotheses   → Sick or Healthy
+</span>Problem 2: THREE hypotheses → Cause A, Cause B, or Cause C
+
+Problem 1: Denominator = P(B|A)×P(A) + P(B|¬A)×P(¬A)        → 2 terms
+Problem 2: Denominator = P(B|A)×P(A) + P(B|B)×P(B) + P(B|C)×P(C)  → 3 terms
+
+Everything else from Problem 1 applies directly.
+The REVERSAL MACHINE now picks from MULTIPLE candidates.</code></pre></div>
+<hr>
+<h2>THE HYPOTHETICAL PROBLEM</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>A factory has a critical assembly line.
+</span>The line just STOPPED producing.
+An alarm triggered: "OVERHEATING DETECTED."
+
+Historical maintenance records show THREE possible root causes:
+
+    CAUSE A — Motor Failure
+        → Happens in 30% of all breakdowns
+        → When motor fails, overheating alarm triggers 90% of the time
+
+    CAUSE B — Coolant Leak
+        → Happens in 20% of all breakdowns
+        → When coolant leaks, overheating alarm triggers 95% of the time
+
+    CAUSE C — Electrical Short
+        → Happens in 50% of all breakdowns
+        → When electrical short happens, overheating alarm triggers 40% of the time
+
+The alarm just went off: OVERHEATING.
+
+QUESTION: What is the probability of EACH cause, given the overheating alarm?
+          Which cause should the repair team investigate FIRST?</code></pre></div>
+<hr>
+<h2>HOW TO APPROACH IT</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>Step 1 → Recognize: this is Bayes with 3 hypotheses (not 2 like Problem 1)
+</span>Step 2 → The PRIOR for each cause = historical breakdown frequency
+Step 3 → The LIKELIHOOD for each = P(Overheating | that specific cause)
+Step 4 → The DENOMINATOR now sums over ALL THREE causes
+Step 5 → Compute POSTERIOR for each cause separately
+Step 6 → The three posteriors MUST sum to 1.0 (they are exhaustive)
+Step 7 → Rank by posterior → send repair team to highest first</code></pre></div>
+<hr>
+<h2>THE GENERALIZED BAYES' THEOREM</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>PROBLEM 1 (Binary — 2 Hypotheses):
+</span>
+                    P(B|H₁) × P(H₁)
+    P(H₁|B) = ───────────────────────────────
+               P(B|H₁)×P(H₁) + P(B|H₂)×P(H₂)
+
+
+PROBLEM 2 (General — N Hypotheses):
+
+                        P(B|Hᵢ) × P(Hᵢ)
+    P(Hᵢ|B) = ─────────────────────────────────
+                    N
+                   Σ  P(B|Hⱼ) × P(Hⱼ)
+                  j=1
+
+WHERE:
+    → Hᵢ = the hypothesis you're evaluating
+    → B  = the observed evidence
+    → The sum in the denominator runs over ALL possible hypotheses
+    → All hypotheses must be MUTUALLY EXCLUSIVE and EXHAUSTIVE</code></pre></div>
+<hr>
+<h2>WHAT "MUTUALLY EXCLUSIVE AND EXHAUSTIVE" MEANS</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>MUTUALLY EXCLUSIVE:
+</span>    → Only ONE cause can be the true cause at a time
+    → The machine didn't fail from Motor AND Coolant simultaneously
+    → P(A ∩ B) = 0, P(A ∩ C) = 0, P(B ∩ C) = 0
+
+EXHAUSTIVE:
+    → These three causes cover ALL possible reasons
+    → P(A) + P(B) + P(C) = 0.30 + 0.20 + 0.50 = 1.00
+    → No mystery fourth cause exists
+
+IF THESE CONDITIONS ARE VIOLATED:
+    → The posteriors will NOT sum to 1
+    → The entire framework breaks
+    → You MUST add an "Other" category if causes don't cover everything</code></pre></div>
+<hr>
+<h2>LABELING EVERY KNOWN QUANTITY</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>┌─────────────────────────────────────────────────────────────────────┐
+</span>│  CAUSE    │  PRIOR P(Hᵢ)  │  LIKELIHOOD P(Overheat|Hᵢ)  │  ROLE  │
+├───────────┼────────────────┼──────────────────────────────┼────────┤
+│  A: Motor │  0.30          │  0.90                        │  Most  │
+│           │                │                              │ likely │
+│           │                │                              │ to     │
+│           │                │                              │ cause  │
+│           │                │                              │ alarm  │
+├───────────┼────────────────┼──────────────────────────────┼────────┤
+│  B: Cool. │  0.20          │  0.95                        │  Rare  │
+│           │                │                              │  but   │
+│           │                │                              │ almost │
+│           │                │                              │ always │
+│           │                │                              │ alarms │
+├───────────┼────────────────┼──────────────────────────────┼────────┤
+│  C: Elec. │  0.50          │  0.40                        │  Most  │
+│           │                │                              │ common │
+│           │                │                              │  but   │
+│           │                │                              │ rarely │
+│           │                │                              │ heats  │
+└───────────┴────────────────┴──────────────────────────────┴────────┘</code></pre></div>
+<hr>
+<h2>THE FULL CALCULATION — STEP BY STEP</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>═══════════════════════════════════════════════════
+</span>STEP 1: COMPUTE NUMERATOR FOR EACH HYPOTHESIS
+═══════════════════════════════════════════════════
+
+Numerator_A = P(Overheat|Motor)   × P(Motor)
+            = 0.90 × 0.30
+            = 0.270
+
+Numerator_B = P(Overheat|Coolant) × P(Coolant)
+            = 0.95 × 0.20
+            = 0.190
+
+Numerator_C = P(Overheat|Electrical) × P(Electrical)
+            = 0.40 × 0.50
+            = 0.200
+
+
+═══════════════════════════════════════════════════
+STEP 2: COMPUTE THE DENOMINATOR (Sum of ALL numerators)
+═══════════════════════════════════════════════════
+
+P(Overheat) = Numerator_A + Numerator_B + Numerator_C
+            = 0.270 + 0.190 + 0.200
+            = 0.660
+
+MEANING: In 66% of ALL breakdowns, the overheating alarm goes off.
+
+
+═══════════════════════════════════════════════════
+STEP 3: COMPUTE POSTERIOR FOR EACH HYPOTHESIS
+═══════════════════════════════════════════════════
+
+P(Motor|Overheat)      = 0.270 / 0.660 = 0.40909  ≈ 40.91%
+P(Coolant|Overheat)    = 0.190 / 0.660 = 0.28788  ≈ 28.79%
+P(Electrical|Overheat) = 0.200 / 0.660 = 0.30303  ≈ 30.30%
+
+
+═══════════════════════════════════════════════════
+STEP 4: VERIFY — POSTERIORS MUST SUM TO 1
+═══════════════════════════════════════════════════
+
+0.40909 + 0.28788 + 0.30303 = 1.00000  ✓
+
+
+═══════════════════════════════════════════════════
+STEP 5: RANK AND DECIDE
+═══════════════════════════════════════════════════
+
+    1st → Motor Failure    : 40.91%  ← INVESTIGATE FIRST
+    2nd → Electrical Short : 30.30%
+    3rd → Coolant Leak     : 28.79%</code></pre></div>
+<hr>
+<h2>THE SURPRISING INSIGHT</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>┌──────────────────────────────────────────────────────────────────┐
+</span>│                                                                  │
+│  BEFORE the alarm (PRIORS):                                     │
+│      Motor: 30%  |  Coolant: 20%  |  Electrical: 50%           │
+│                                                                  │
+│  AFTER the alarm (POSTERIORS):                                   │
+│      Motor: 41%  |  Coolant: 29%  |  Electrical: 30%           │
+│                                                                  │
+│  WHAT HAPPENED:                                                  │
+│      → Electrical was the MOST COMMON cause (50% prior)         │
+│      → But it RARELY triggers overheating (only 40%)            │
+│      → So the alarm DECREASED our belief in electrical          │
+│        from 50% → 30%                                           │
+│                                                                  │
+│      → Motor was LESS common (30% prior)                        │
+│      → But it VERY OFTEN triggers overheating (90%)             │
+│      → So the alarm INCREASED our belief in motor               │
+│        from 30% → 41%                                           │
+│                                                                  │
+│      → Coolant was LEAST common (20% prior)                     │
+│      → But it ALMOST ALWAYS triggers overheating (95%)          │
+│      → So the alarm INCREASED our belief in coolant             │
+│        from 20% → 29%                                           │
+│                                                                  │
+│  THE EVIDENCE REDISTRIBUTED BELIEF.                             │
+│  High likelihood BOOSTS low priors.                             │
+│  Low likelihood PENALIZES high priors.                          │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘</code></pre></div>
+<hr>
+<h2>HOW TO SOLVE IT — THE GENERALIZED METHOD</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>FOR ANY N-HYPOTHESIS BAYES PROBLEM:
+</span>
+STEP 1: List all hypotheses H₁, H₂, ..., Hₙ
+STEP 2: Assign PRIOR to each → P(Hᵢ)
+        Verify: all priors sum to 1
+STEP 3: Determine LIKELIHOOD for each → P(Evidence|Hᵢ)
+STEP 4: Compute NUMERATOR for each → P(Evidence|Hᵢ) × P(Hᵢ)
+STEP 5: Compute DENOMINATOR → sum of all numerators
+STEP 6: Divide each numerator by denominator → POSTERIOR P(Hᵢ|Evidence)
+STEP 7: Verify: all posteriors sum to 1
+STEP 8: Rank hypotheses by posterior</code></pre></div>
+<hr>
+<h2>WHAT COULD BE DONE</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>→ Collect MORE evidence (e.g., vibration sensor, pressure gauge)
+</span>    → Each new piece of evidence further refines posteriors
+    → This is SEQUENTIAL UPDATING (Problem 6)
+→ Build a decision matrix: posterior × cost of wrong diagnosis
+    → Even if Motor is most probable, if Coolant failure is CATASTROPHIC,
+      maybe check Coolant first
+→ Use historical data to LEARN priors instead of assuming them</code></pre></div>
+<hr>
+<h2>WHAT SHOULD DO</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>✓ ALWAYS verify priors sum to 1.0 BEFORE starting
+</span>✓ ALWAYS verify posteriors sum to 1.0 AFTER computing
+✓ ALWAYS compute ALL posteriors — not just the one you "think" is right
+✓ ALWAYS consider the COST/CONSEQUENCE of each hypothesis
+    → Highest posterior ≠ always the best action
+    → Bayesian DECISION THEORY = posterior × utility (Problem 9)
+✓ ALWAYS present results as a RANKED list with probabilities</code></pre></div>
+<hr>
+<h2>WHAT SHOULD NOT DO</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>✗ DO NOT pick the hypothesis with highest PRIOR and call it the answer
+</span>    → Electrical has highest prior (50%) but is NOT the most likely after evidence
+
+✗ DO NOT pick the hypothesis with highest LIKELIHOOD and call it the answer
+    → Coolant has highest likelihood (95%) but is NOT the most likely either
+
+✗ DO NOT forget any hypothesis in the denominator
+    → Omitting one cause makes ALL posteriors wrong
+
+✗ DO NOT apply this if causes can OVERLAP
+    → "Motor failure AND coolant leak together" violates mutual exclusivity
+    → If overlap is possible, need JOINT probability models (Problem 8)
+
+✗ DO NOT confuse PRIOR with POSTERIOR
+    → Prior = BEFORE seeing evidence
+    → Posterior = AFTER seeing evidence
+    → The whole point of Bayes is to UPDATE from one to the other</code></pre></div>
+<hr>
+<h2>WHEN TO USE MULTI-HYPOTHESIS BAYES</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>✓ Fault diagnosis — which component failed?
+</span>✓ Medical differential diagnosis — which of 5 diseases matches symptoms?
+✓ Customer segmentation — which segment does this user belong to?
+✓ Source identification — which factory produced this defective item?
+✓ Any classification problem with known likelihoods and priors</code></pre></div>
+<hr>
+<h2>WHEN NOT TO USE</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>✗ When hypotheses are NOT mutually exclusive
+</span>    → Patient can have BOTH diabetes AND hypertension
+    → Need independent Bayes calculations or joint models
+
+✗ When hypotheses are NOT exhaustive
+    → If there's an unknown 4th cause you haven't listed
+    → Solution: add an "Other/Unknown" category with estimated prior
+
+✗ When likelihoods are unknown or unreliable
+    → Garbage likelihoods → garbage posteriors
+    → "Garbage In, Garbage Out" applies fully to Bayes</code></pre></div>
+<hr>
+<h2>HOW IT ONLY WORKS — INTERNAL MECHANICS</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>THE DENOMINATOR AS A COMPETITION:
+</span>
+    Think of the denominator as a TOURNAMENT.
+    Each hypothesis COMPETES to explain the evidence.
+
+    Numerator_i = P(Evidence|Hᵢ) × P(Hᵢ)
+                = "How well does Hᵢ explain the evidence,
+                   weighted by how plausible Hᵢ was beforehand"
+
+    Denominator = Sum of ALL numerators
+                = "Total explanatory power across all hypotheses"
+
+    Posterior_i = Numerator_i / Denominator
+                = "Hᵢ's SHARE of the total explanatory power"
+
+    THIS IS WHY POSTERIORS SUM TO 1:
+        → Each posterior is a FRACTION of the total
+        → Fractions of a whole always sum to 1
+
+THE GEOMETRY:
+
+    Imagine a pie chart.
+    BEFORE evidence: pie slices = priors (30%, 20%, 50%)
+    AFTER evidence:  pie slices = posteriors (41%, 29%, 30%)
+    The evidence RESHAPES the pie.
+    Hypotheses that explain the evidence well get BIGGER slices.
+    Hypotheses that explain it poorly get SMALLER slices.
+
+MATHEMATICAL GUARANTEE:
+
+    If one hypothesis has:
+        → Prior = 0 (impossible before evidence)
+        → Then posterior = 0 (still impossible after evidence)
+    Bayes CANNOT make the impossible possible.
+    It can only REDISTRIBUTE belief among plausible hypotheses.</code></pre></div>
+<hr>
+<h2>THE NUMERATOR TABLE — THE KEY COMPUTATIONAL PATTERN</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>┌──────────────┬──────────┬────────────┬─────────────┬───────────┐
+</span>│  Hypothesis  │  Prior   │ Likelihood │  Numerator  │ Posterior │
+│     Hᵢ       │  P(Hᵢ)  │  P(E|Hᵢ)  │ P(E|Hᵢ)×   │ Num_i /   │
+│              │          │            │    P(Hᵢ)    │   Denom   │
+├──────────────┼──────────┼────────────┼─────────────┼───────────┤
+│  Motor       │  0.30    │   0.90     │   0.270     │  0.40909  │
+│  Coolant     │  0.20    │   0.95     │   0.190     │  0.28788  │
+│  Electrical  │  0.50    │   0.40     │   0.200     │  0.30303  │
+├──────────────┼──────────┼────────────┼─────────────┼───────────┤
+│  TOTAL       │  1.00    │    ---     │   0.660     │  1.00000  │
+│              │          │            │  (=Denom)   │   ✓       │
+└──────────────┴──────────┴────────────┴─────────────┴───────────┘
+
+THIS TABLE IS THE UNIVERSAL TEMPLATE.
+Every multi-hypothesis Bayes problem reduces to filling this table.
+Works for 3 hypotheses, 10 hypotheses, or 1000 hypotheses.</code></pre></div>
+<hr>
+<h2>COMMON PITFALLS AND FAILURE MODES</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>PITFALL 1: NON-EXHAUSTIVE HYPOTHESES
+</span>    → You list 3 causes but there's actually a 4th
+    → Priors sum to less than 1
+    → All posteriors are INFLATED (wrong)
+    → FIX: Always include "Other" category
+
+PITFALL 2: CONFUSING LIKELIHOOD RANKING WITH POSTERIOR RANKING
+    → Coolant has HIGHEST likelihood (0.95)
+    → But NOT the highest posterior (0.288)
+    → Because its prior (0.20) is too low
+    → The posterior balances BOTH prior AND likelihood
+
+PITFALL 3: EQUAL PRIORS ASSUMPTION
+    → When you don't know priors, some people use equal priors (1/3 each)
+    → This is called "UNINFORMATIVE PRIOR" or "PRINCIPLE OF INDIFFERENCE"
+    → It's a valid starting point but can be VERY WRONG
+    → Better to estimate from data whenever possible
+
+PITFALL 4: PRECISION ERRORS WITH MANY HYPOTHESES
+    → With 100+ hypotheses, numerators can be very small
+    → Floating point errors accumulate
+    → FIX: Work in LOG space (covered in Problem 5)</code></pre></div>
+<hr>
+<h2>SCALABILITY CONSIDERATIONS</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>NUMBER OF HYPOTHESES:
+</span>    → 2 hypotheses  : Problem 1 (binary — trivial)
+    → 3 hypotheses  : This problem (still easy)
+    → 10 hypotheses : Just a bigger table (same method)
+    → 1000 hypotheses: Same method but use arrays/vectors
+    → Infinite (continuous): Denominator becomes an INTEGRAL (Problem 7)
+
+COMPUTATIONAL COST:
+    → N hypotheses → N multiplications + N additions + N divisions
+    → O(N) — LINEAR in number of hypotheses
+    → Very fast even for large N
+
+THE BOTTLENECK IS NOT COMPUTATION — IT'S KNOWLEDGE:
+    → You need P(Hᵢ) for EVERY hypothesis
+    → You need P(E|Hᵢ) for EVERY hypothesis
+    → Getting these numbers is the HARD part
+    → The math is the EASY part</code></pre></div>
+<hr>
+<h2>INTERPRETABILITY CONSIDERATIONS</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>STRENGTHS OF MULTI-HYPOTHESIS BAYES:
+</span>    → Full probability distribution over causes
+    → Not just "best guess" but "confidence in each option"
+    → Can say: "41% Motor, 30% Electrical, 29% Coolant"
+    → Decision maker can weigh probabilities against costs
+
+PRESENTATION BEST PRACTICES:
+    → Always show the FULL posterior distribution
+    → Always show how posteriors CHANGED from priors
+    → Use the shift (posterior - prior) to show evidence IMPACT
+        Motor:      +10.91% (evidence supports this)
+        Coolant:    +8.79%  (evidence supports this)
+        Electrical: -19.70% (evidence argues against this)</code></pre></div>
+<hr>
+<h2>COMPLETE WORKING CODE</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ============================================================</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># PROBLEM 2: THE BROKEN MACHINE</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># Multi-Hypothesis Bayes — N Causes, Single Evidence</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># Builds on Problem 1: same formula, expanded denominator</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ============================================================</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ---- DEFINE HYPOTHESES ----</span><span>
+</span><span>hypotheses </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">{</span><span>
+</span><span>    </span><span class="token" style="color: rgb(163, 21, 21);">"Motor Failure"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>    </span><span class="token" style="color: rgb(57, 58, 52);">{</span><span class="token" style="color: rgb(163, 21, 21);">"prior"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.30</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"likelihood"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.90</span><span class="token" style="color: rgb(57, 58, 52);">}</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>
+</span><span>    </span><span class="token" style="color: rgb(163, 21, 21);">"Coolant Leak"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>     </span><span class="token" style="color: rgb(57, 58, 52);">{</span><span class="token" style="color: rgb(163, 21, 21);">"prior"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.20</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"likelihood"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.95</span><span class="token" style="color: rgb(57, 58, 52);">}</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>
+</span><span>    </span><span class="token" style="color: rgb(163, 21, 21);">"Electrical Short"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">{</span><span class="token" style="color: rgb(163, 21, 21);">"prior"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.50</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"likelihood"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.40</span><span class="token" style="color: rgb(57, 58, 52);">}</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>
+</span><span></span><span class="token" style="color: rgb(57, 58, 52);">}</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ---- STEP 1: VERIFY PRIORS SUM TO 1 ----</span><span>
+</span><span>total_prior </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token builtin">sum</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>h</span><span class="token" style="color: rgb(57, 58, 52);">[</span><span class="token" style="color: rgb(163, 21, 21);">"prior"</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span> </span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> h </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> hypotheses</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>values</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">assert</span><span> </span><span class="token builtin">abs</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>total_prior </span><span class="token" style="color: rgb(57, 58, 52);">-</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">1.0</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">&lt;</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">1e-9</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"PRIORS DO NOT SUM TO 1: </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">total_prior</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"✓ Priors verified: sum ="</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> total_prior</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ---- STEP 2: COMPUTE NUMERATORS ----</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> name</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> h </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> hypotheses</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>items</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>    h</span><span class="token" style="color: rgb(57, 58, 52);">[</span><span class="token" style="color: rgb(163, 21, 21);">"numerator"</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> h</span><span class="token" style="color: rgb(57, 58, 52);">[</span><span class="token" style="color: rgb(163, 21, 21);">"prior"</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> h</span><span class="token" style="color: rgb(57, 58, 52);">[</span><span class="token" style="color: rgb(163, 21, 21);">"likelihood"</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ---- STEP 3: COMPUTE DENOMINATOR ----</span><span>
+</span><span>denominator </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token builtin">sum</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>h</span><span class="token" style="color: rgb(57, 58, 52);">[</span><span class="token" style="color: rgb(163, 21, 21);">"numerator"</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span> </span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> h </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> hypotheses</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>values</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ---- STEP 4: COMPUTE POSTERIORS ----</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> name</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> h </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> hypotheses</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>items</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>    h</span><span class="token" style="color: rgb(57, 58, 52);">[</span><span class="token" style="color: rgb(163, 21, 21);">"posterior"</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> h</span><span class="token" style="color: rgb(57, 58, 52);">[</span><span class="token" style="color: rgb(163, 21, 21);">"numerator"</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">/</span><span> denominator
+</span>
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ---- STEP 5: VERIFY POSTERIORS SUM TO 1 ----</span><span>
+</span><span>total_posterior </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token builtin">sum</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>h</span><span class="token" style="color: rgb(57, 58, 52);">[</span><span class="token" style="color: rgb(163, 21, 21);">"posterior"</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span> </span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> h </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> hypotheses</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>values</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">assert</span><span> </span><span class="token builtin">abs</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>total_posterior </span><span class="token" style="color: rgb(57, 58, 52);">-</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">1.0</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">&lt;</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">1e-9</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"POSTERIORS DO NOT SUM TO 1: </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">total_posterior</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"✓ Posteriors verified: sum ="</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token builtin">round</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>total_posterior</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">5</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ---- STEP 6: DISPLAY THE FULL TABLE ----</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"\n"</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">+</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"="</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">80</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"MULTI-HYPOTHESIS BAYES — FACTORY MACHINE DIAGNOSIS"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"Evidence Observed: OVERHEATING ALARM"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"="</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">80</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'Hypothesis'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&lt;22</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'Prior'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;8</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'Likelihood'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;12</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'Numerator'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;12</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'Posterior'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;12</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"-"</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">80</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> name</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> h </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> hypotheses</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>items</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>    </span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">name</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&lt;22</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">h</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">[</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'prior'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">]</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;8.3f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">h</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">[</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'likelihood'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">]</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;12.3f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> "</span><span>
+</span><span>          </span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">h</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">[</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'numerator'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">]</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;12.5f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">h</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">[</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'posterior'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">]</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;12.5f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"-"</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">80</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'TOTAL'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&lt;22</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">total_prior</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;8.3f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'---'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;12</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">denominator</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;12.5f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">total_posterior</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;12.5f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"="</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">80</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ---- STEP 7: SHOW BELIEF SHIFT ----</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"\n"</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">+</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"="</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">80</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"BELIEF SHIFT: How Evidence Changed Our Beliefs"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"="</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">80</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'Hypothesis'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&lt;22</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'Prior'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;8</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'→'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;3</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'Posterior'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;10</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'Shift'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;10</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'Direction'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;12</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"-"</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">80</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> name</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> h </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> hypotheses</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>items</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>    shift </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> h</span><span class="token" style="color: rgb(57, 58, 52);">[</span><span class="token" style="color: rgb(163, 21, 21);">"posterior"</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">-</span><span> h</span><span class="token" style="color: rgb(57, 58, 52);">[</span><span class="token" style="color: rgb(163, 21, 21);">"prior"</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span>
+</span><span>    direction </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"▲ INCREASED"</span><span> </span><span class="token" style="color: rgb(0, 0, 255);">if</span><span> shift </span><span class="token" style="color: rgb(57, 58, 52);">&gt;</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0</span><span> </span><span class="token" style="color: rgb(0, 0, 255);">else</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"▼ DECREASED"</span><span>
+</span><span>    </span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">name</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&lt;22</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">h</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">[</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'prior'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">]</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;7.1%</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'→'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;3</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">h</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">[</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'posterior'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">]</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;9.2%</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> "</span><span>
+</span><span>          </span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">shift</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;+9.2%</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">  </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">direction</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ---- STEP 8: RANKED RECOMMENDATION ----</span><span>
+</span><span>ranked </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token builtin">sorted</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>hypotheses</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>items</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> key</span><span class="token" style="color: rgb(57, 58, 52);">=</span><span class="token" style="color: rgb(0, 0, 255);">lambda</span><span> x</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span> x</span><span class="token" style="color: rgb(57, 58, 52);">[</span><span class="token" style="color: rgb(54, 172, 170);">1</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span class="token" style="color: rgb(57, 58, 52);">[</span><span class="token" style="color: rgb(163, 21, 21);">"posterior"</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> reverse</span><span class="token" style="color: rgb(57, 58, 52);">=</span><span class="token" style="color: rgb(54, 172, 170);">True</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"\n"</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">+</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"="</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">80</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"REPAIR TEAM PRIORITY ORDER"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"="</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">80</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> rank</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>name</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> h</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span> </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> </span><span class="token builtin">enumerate</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>ranked</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">1</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>    bar_length </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token builtin">int</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>h</span><span class="token" style="color: rgb(57, 58, 52);">[</span><span class="token" style="color: rgb(163, 21, 21);">"posterior"</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">50</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span>    bar </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"█"</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> bar_length
+</span><span>    </span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"  Priority </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">rank</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">: </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">name</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&lt;22</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> [</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">h</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">[</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'posterior'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">]</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.1%</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">] </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">bar</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ---- STEP 9: GENERALIZED FUNCTION ----</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">def</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">multi_hypothesis_bayes</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>hypotheses_dict</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> evidence_name</span><span class="token" style="color: rgb(57, 58, 52);">=</span><span class="token" style="color: rgb(163, 21, 21);">"Evidence"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>    </span><span class="token triple-quoted-string" style="color: rgb(163, 21, 21);">"""
+</span><span class="token triple-quoted-string" style="color: rgb(163, 21, 21);">    General N-hypothesis Bayes calculator.
+</span><span class="token triple-quoted-string" style="color: rgb(163, 21, 21);">    Input: dict of {name: {"prior": float, "likelihood": float}}
+</span><span class="token triple-quoted-string" style="color: rgb(163, 21, 21);">    Returns: dict with posteriors added
+</span><span class="token triple-quoted-string" style="color: rgb(163, 21, 21);">    """</span><span>
+</span><span>    </span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># Validate priors</span><span>
+</span><span>    total_p </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token builtin">sum</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>h</span><span class="token" style="color: rgb(57, 58, 52);">[</span><span class="token" style="color: rgb(163, 21, 21);">"prior"</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span> </span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> h </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> hypotheses_dict</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>values</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span>    </span><span class="token" style="color: rgb(0, 0, 255);">if</span><span> </span><span class="token builtin">abs</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>total_p </span><span class="token" style="color: rgb(57, 58, 52);">-</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">1.0</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">&gt;</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">1e-6</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>        </span><span class="token" style="color: rgb(0, 0, 255);">raise</span><span> ValueError</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"Priors sum to </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">total_p</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">, not 1.0"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span>    </span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># Compute numerators</span><span>
+</span><span>    </span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> h </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> hypotheses_dict</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>values</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>        h</span><span class="token" style="color: rgb(57, 58, 52);">[</span><span class="token" style="color: rgb(163, 21, 21);">"numerator"</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> h</span><span class="token" style="color: rgb(57, 58, 52);">[</span><span class="token" style="color: rgb(163, 21, 21);">"prior"</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> h</span><span class="token" style="color: rgb(57, 58, 52);">[</span><span class="token" style="color: rgb(163, 21, 21);">"likelihood"</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span>
+</span>
+<span>    </span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># Denominator</span><span>
+</span><span>    denom </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token builtin">sum</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>h</span><span class="token" style="color: rgb(57, 58, 52);">[</span><span class="token" style="color: rgb(163, 21, 21);">"numerator"</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span> </span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> h </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> hypotheses_dict</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>values</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span>    </span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># Posteriors</span><span>
+</span><span>    </span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> h </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> hypotheses_dict</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>values</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>        h</span><span class="token" style="color: rgb(57, 58, 52);">[</span><span class="token" style="color: rgb(163, 21, 21);">"posterior"</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> h</span><span class="token" style="color: rgb(57, 58, 52);">[</span><span class="token" style="color: rgb(163, 21, 21);">"numerator"</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">/</span><span> denom
+</span>
+<span>    </span><span class="token" style="color: rgb(0, 0, 255);">return</span><span> hypotheses_dict</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> denom
+</span>
+
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ---- STEP 10: DEMONSTRATION WITH 5 HYPOTHESES ----</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"\n\n"</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">+</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"="</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">80</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"BONUS: 5-HYPOTHESIS EXAMPLE — Server Crash Diagnosis"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"Evidence: CPU usage spike detected"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"="</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">80</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span>server_causes </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">{</span><span>
+</span><span>    </span><span class="token" style="color: rgb(163, 21, 21);">"Memory Leak"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>      </span><span class="token" style="color: rgb(57, 58, 52);">{</span><span class="token" style="color: rgb(163, 21, 21);">"prior"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.25</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"likelihood"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.70</span><span class="token" style="color: rgb(57, 58, 52);">}</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>
+</span><span>    </span><span class="token" style="color: rgb(163, 21, 21);">"DDoS Attack"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>      </span><span class="token" style="color: rgb(57, 58, 52);">{</span><span class="token" style="color: rgb(163, 21, 21);">"prior"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.10</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"likelihood"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.95</span><span class="token" style="color: rgb(57, 58, 52);">}</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>
+</span><span>    </span><span class="token" style="color: rgb(163, 21, 21);">"Bad Deployment"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>   </span><span class="token" style="color: rgb(57, 58, 52);">{</span><span class="token" style="color: rgb(163, 21, 21);">"prior"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.30</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"likelihood"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.60</span><span class="token" style="color: rgb(57, 58, 52);">}</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>
+</span><span>    </span><span class="token" style="color: rgb(163, 21, 21);">"Database Lock"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>    </span><span class="token" style="color: rgb(57, 58, 52);">{</span><span class="token" style="color: rgb(163, 21, 21);">"prior"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.20</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"likelihood"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.50</span><span class="token" style="color: rgb(57, 58, 52);">}</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>
+</span><span>    </span><span class="token" style="color: rgb(163, 21, 21);">"Hardware Fault"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>   </span><span class="token" style="color: rgb(57, 58, 52);">{</span><span class="token" style="color: rgb(163, 21, 21);">"prior"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.15</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"likelihood"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.30</span><span class="token" style="color: rgb(57, 58, 52);">}</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>
+</span><span></span><span class="token" style="color: rgb(57, 58, 52);">}</span><span>
+</span>
+<span>result</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> denom </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> multi_hypothesis_bayes</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>server_causes</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"\n</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'Cause'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&lt;22</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'Prior'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;8</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'Likelihood'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;12</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'Posterior'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;12</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"-"</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">60</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> name</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> h </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> result</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>items</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>    </span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">name</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&lt;22</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">h</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">[</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'prior'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">]</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;8.2f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">h</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">[</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'likelihood'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">]</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;12.2f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">h</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">[</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'posterior'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">]</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;12.4f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"-"</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">60</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'Denominator P(E)'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&lt;22</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">''</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;8</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">''</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;12</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">denom</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;12.5f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span>ranked_server </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token builtin">sorted</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>result</span><span class="token" style="color: rgb(57, 58, 52);">.</span><span>items</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> key</span><span class="token" style="color: rgb(57, 58, 52);">=</span><span class="token" style="color: rgb(0, 0, 255);">lambda</span><span> x</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span> x</span><span class="token" style="color: rgb(57, 58, 52);">[</span><span class="token" style="color: rgb(54, 172, 170);">1</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span class="token" style="color: rgb(57, 58, 52);">[</span><span class="token" style="color: rgb(163, 21, 21);">"posterior"</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> reverse</span><span class="token" style="color: rgb(57, 58, 52);">=</span><span class="token" style="color: rgb(54, 172, 170);">True</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"\n→ Most likely cause: </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">ranked_server</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">[</span><span class="token string-interpolation interpolation" style="color: rgb(54, 172, 170);">0</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">]</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">[</span><span class="token string-interpolation interpolation" style="color: rgb(54, 172, 170);">0</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">]</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> (</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">ranked_server</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">[</span><span class="token string-interpolation interpolation" style="color: rgb(54, 172, 170);">0</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">]</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">[</span><span class="token string-interpolation interpolation" style="color: rgb(54, 172, 170);">1</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">]</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">[</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'posterior'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">]</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.1%</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">)"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"→ Least likely cause: </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">ranked_server</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">[</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">-</span><span class="token string-interpolation interpolation" style="color: rgb(54, 172, 170);">1</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">]</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">[</span><span class="token string-interpolation interpolation" style="color: rgb(54, 172, 170);">0</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">]</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> (</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">ranked_server</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">[</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">-</span><span class="token string-interpolation interpolation" style="color: rgb(54, 172, 170);">1</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">]</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">[</span><span class="token string-interpolation interpolation" style="color: rgb(54, 172, 170);">1</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">]</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">[</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'posterior'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">]</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">.1%</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">)"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+
+<span></span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># ---- STEP 11: SENSITIVITY — What if we change ONE prior? ----</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"\n\n"</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">+</span><span> </span><span class="token" style="color: rgb(163, 21, 21);">"="</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">80</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"SENSITIVITY: What if Motor Failure prior changes?"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"(Coolant and Electrical priors adjust proportionally)"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"="</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">80</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'Motor Prior'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;14</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'P(Motor|OH)'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;14</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'P(Cool|OH)'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;14</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'P(Elec|OH)'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;14</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span></span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(163, 21, 21);">"-"</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">60</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span></span><span class="token" style="color: rgb(0, 0, 255);">for</span><span> motor_prior </span><span class="token" style="color: rgb(0, 0, 255);">in</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">[</span><span class="token" style="color: rgb(54, 172, 170);">0.05</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.10</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.20</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.30</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.40</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.50</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.70</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.90</span><span class="token" style="color: rgb(57, 58, 52);">]</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>
+</span><span>    remaining </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">1.0</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">-</span><span> motor_prior
+</span><span>    </span><span class="token" style="color: rgb(0, 128, 0); font-style: italic;"># Keep coolant:electrical ratio same as original (20:50 = 2:5)</span><span>
+</span><span>    coolant_prior </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> remaining </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(54, 172, 170);">2</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">/</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">7</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span>    electrical_prior </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> remaining </span><span class="token" style="color: rgb(57, 58, 52);">*</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token" style="color: rgb(54, 172, 170);">5</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">/</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">7</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span>
+<span>    test_hyp </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">{</span><span>
+</span><span>        </span><span class="token" style="color: rgb(163, 21, 21);">"Motor"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>      </span><span class="token" style="color: rgb(57, 58, 52);">{</span><span class="token" style="color: rgb(163, 21, 21);">"prior"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span> motor_prior</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>       </span><span class="token" style="color: rgb(163, 21, 21);">"likelihood"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.90</span><span class="token" style="color: rgb(57, 58, 52);">}</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>
+</span><span>        </span><span class="token" style="color: rgb(163, 21, 21);">"Coolant"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span>    </span><span class="token" style="color: rgb(57, 58, 52);">{</span><span class="token" style="color: rgb(163, 21, 21);">"prior"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span> coolant_prior</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>      </span><span class="token" style="color: rgb(163, 21, 21);">"likelihood"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.95</span><span class="token" style="color: rgb(57, 58, 52);">}</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>
+</span><span>        </span><span class="token" style="color: rgb(163, 21, 21);">"Electrical"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span> </span><span class="token" style="color: rgb(57, 58, 52);">{</span><span class="token" style="color: rgb(163, 21, 21);">"prior"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span> electrical_prior</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>   </span><span class="token" style="color: rgb(163, 21, 21);">"likelihood"</span><span class="token" style="color: rgb(57, 58, 52);">:</span><span> </span><span class="token" style="color: rgb(54, 172, 170);">0.40</span><span class="token" style="color: rgb(57, 58, 52);">}</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span>
+</span><span>    </span><span class="token" style="color: rgb(57, 58, 52);">}</span><span>
+</span>
+<span>    res</span><span class="token" style="color: rgb(57, 58, 52);">,</span><span> _ </span><span class="token" style="color: rgb(57, 58, 52);">=</span><span> multi_hypothesis_bayes</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span>test_hyp</span><span class="token" style="color: rgb(57, 58, 52);">)</span><span>
+</span><span>    </span><span class="token" style="color: rgb(0, 0, 255);">print</span><span class="token" style="color: rgb(57, 58, 52);">(</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">motor_prior</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;14.2f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">res</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">[</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'Motor'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">]</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">[</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'posterior'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">]</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;14.4f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> "</span><span>
+</span><span>          </span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">f"</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">res</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">[</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'Coolant'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">]</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">[</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'posterior'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">]</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;14.4f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);"> </span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">{</span><span class="token string-interpolation interpolation">res</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">[</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'Electrical'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">]</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">[</span><span class="token string-interpolation interpolation" style="color: rgb(163, 21, 21);">'posterior'</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">]</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">:</span><span class="token string-interpolation interpolation format-spec">&gt;14.4f</span><span class="token string-interpolation interpolation" style="color: rgb(57, 58, 52);">}</span><span class="token string-interpolation" style="color: rgb(163, 21, 21);">"</span><span class="token" style="color: rgb(57, 58, 52);">)</span></code></pre></div>
+<hr>
+<h2>EXPECTED OUTPUT</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>✓ Priors verified: sum = 1.0
+</span>✓ Posteriors verified: sum = 1.0
+
+================================================================================
+MULTI-HYPOTHESIS BAYES — FACTORY MACHINE DIAGNOSIS
+Evidence Observed: OVERHEATING ALARM
+================================================================================
+Hypothesis                Prior   Likelihood    Numerator    Posterior
+--------------------------------------------------------------------------------
+Motor Failure             0.300        0.900      0.27000      0.40909
+Coolant Leak              0.200        0.950      0.19000      0.28788
+Electrical Short          0.500        0.400      0.20000      0.30303
+--------------------------------------------------------------------------------
+TOTAL                     1.000          ---      0.66000      1.00000
+================================================================================
+
+================================================================================
+BELIEF SHIFT: How Evidence Changed Our Beliefs
+================================================================================
+Hypothesis                Prior   →   Posterior      Shift    Direction
+--------------------------------------------------------------------------------
+Motor Failure             30.0%   →     40.91%    +10.91%   ▲ INCREASED
+Coolant Leak              20.0%   →     28.79%     +8.79%   ▲ INCREASED
+Electrical Short          50.0%   →     30.30%    -19.70%   ▼ DECREASED
+
+================================================================================
+REPAIR TEAM PRIORITY ORDER
+================================================================================
+  Priority 1: Motor Failure          [40.9%] ████████████████████
+  Priority 2: Electrical Short       [30.3%] ███████████████
+  Priority 3: Coolant Leak           [28.8%] ██████████████
+
+→ Most likely cause: Memory Leak (30.5%)
+→ Least likely cause: Hardware Fault (7.8%)</code></pre></div>
+<hr>
+<h2>COMMON PITFALLS AND FAILURE MODES — SPECIFIC TO MULTI-HYPOTHESIS</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>PITFALL 1: MISSING HYPOTHESIS
+</span>    → You forget to include one possible cause
+    → Denominator is TOO SMALL
+    → All posteriors are INFLATED
+    → Example: If we forgot Electrical Short:
+        Denom = 0.270 + 0.190 = 0.460 (wrong, should be 0.660)
+        P(Motor|OH) = 0.270/0.460 = 0.587 (wrong, should be 0.409)
+
+PITFALL 2: OVERLAPPING HYPOTHESES
+    → "Motor Failure" and "Old Motor" are not mutually exclusive
+    → Counting the same cause twice inflates its posterior
+    → FIX: Merge overlapping categories
+
+PITFALL 3: ZERO LIKELIHOOD
+    → If P(Evidence|Hᵢ) = 0 for some hypothesis
+    → That hypothesis gets posterior = 0 (completely eliminated)
+    → This is CORRECT behavior — but make sure the zero is justified
+    → A single wrong zero permanently kills a hypothesis
+
+PITFALL 4: UNIFORM LIKELIHOOD
+    → If ALL hypotheses have the SAME likelihood
+    → Then posteriors = priors (evidence tells you NOTHING)
+    → This is also correct — uninformative evidence doesn't change beliefs</code></pre></div>
+<hr>
+<h2>SCALABILITY CONSIDERATIONS — MULTI-HYPOTHESIS SPECIFIC</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>COMPUTATIONAL:
+</span>    → N hypotheses → O(N) computation → trivially fast
+    → Even 10,000 hypotheses: microseconds
+
+KNOWLEDGE ACQUISITION:
+    → N hypotheses → need N priors + N likelihoods = 2N numbers
+    → Getting 2N reliable numbers is the REAL challenge
+    → For 100 diseases × 50 symptoms = 5,000 likelihood values needed
+    → This motivates LEARNING from data (Problem 5: Naive Bayes)
+
+WHEN N IS VERY LARGE:
+    → Listing all hypotheses becomes impractical
+    → Continuous hypothesis space → integrals (Problem 7)
+    → Use MCMC sampling instead of exact computation (Problem 10)</code></pre></div>
+<hr>
+<h2>KEY TAKEAWAY FROM PROBLEM 2</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>┌──────────────────────────────────────────────────────────────────┐
+</span>│                                                                  │
+│  LESSON: Bayes generalizes naturally from 2 to N hypotheses.    │
+│                                                                  │
+│  → The denominator becomes a SUM over all hypotheses            │
+│  → Each posterior = that hypothesis's SHARE of total evidence   │
+│  → High prior + low likelihood CAN LOSE to low prior +         │
+│    high likelihood                                              │
+│  → Posteriors must ALWAYS sum to 1 (sanity check)              │
+│  → The NUMERATOR TABLE is the universal computation pattern     │
+│                                                                  │
+│  FROM PROBLEM 1:                                                 │
+│  → Same formula, same reversal machine                          │
+│  → Binary was a SPECIAL CASE of this general form               │
+│  → The denominator with 2 terms was just N=2                    │
+│                                                                  │
+│  NEW IN THIS PROBLEM:                                            │
+│  → Multiple competing hypotheses                                │
+│  → Belief REDISTRIBUTION across all hypotheses                  │
+│  → Evidence can DECREASE belief in the most common cause        │
+│  → Ranking by posterior ≠ ranking by prior ≠ ranking by         │
+│    likelihood                                                    │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘</code></pre></div>
+<hr>
+<h2>🌉 BRIDGE TO PROBLEM 3</h2>
+<div class="relative"><pre style="color: rgb(57, 58, 52); font-family: Consolas, &quot;Bitstream Vera Sans Mono&quot;, &quot;Courier New&quot;, Courier, monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; font-size: 0.9em; line-height: 1.2em; tab-size: 4; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border: 1px solid rgb(221, 221, 221); background-color: white;"><code style="white-space: pre-wrap; word-break: break-all;"><span>WHAT WE MASTERED:
+</span>    → Problem 1: Binary Bayes (2 hypotheses, 1 evidence)
+    → Problem 2: Multi-hypothesis Bayes (N hypotheses, 1 evidence)
+
+WHAT'S STILL MISSING:
+    → We only used ONE piece of evidence each time
+    → What if you observe MULTIPLE pieces of evidence?
+    → The overheating alarm went off AND a vibration sensor triggered
+    → How do we combine MULTIPLE evidence sources?
+
+PROBLEM 3: The Email Spam Detector
+    → An email arrives with 3 suspicious features
+    → Feature 1: Contains the word "FREE"
+    → Feature 2: Has ALL CAPS in subject
+    → Feature 3: Sender is unknown
+    → How do we combine all three features to classify spam vs not-spam?
+    → This introduces MULTIPLE EVIDENCE and the concept of
+      CONDITIONAL INDEPENDENCE (the "Naive" in Naive Bayes)</code></pre></div>
+<hr>
+</div>
+</div>
+
+<!-- ========== data-index="5" ========== -->
+
+        </div>
+
+        <div class="nav-bar">
+            <a href="problem-1.html" class="nav-button prev">← Previous Problem</a>
+            <div class="page-info">
+                <a href="index.html" class="nav-button home">📚 Table of Contents</a><br>
+                <span style="margin-top:8px;display:block">Problem 2 of 9</span>
+            </div>
+            <a href="problem-3.html" class="nav-button next">Next Problem →</a>
+        </div>
+    </div>
+
+    
+    <div id="progress-track"><div id="progress-fill"></div></div>
+    <div id="progress-pct">0%</div>
+
+
+    <script>
+    const fill = document.getElementById('progress-fill');
+    const pct  = document.getElementById('progress-pct');
+    function updateProgress() {
+        const scrollTop = window.scrollY;
+        const docHeight = document.body.scrollHeight - window.innerHeight;
+        const scrolled  = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+        fill.style.height = scrolled + '%';
+        pct.textContent   = Math.round(scrolled) + '%';
+    }
+    window.addEventListener('scroll', updateProgress);
+    updateProgress();
+
+    document.addEventListener('keydown', function(e) {
+        if (['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+        if (e.key === 'ArrowLeft') {
+            const b = document.querySelector('.nav-button.prev');
+            if (b && !b.classList.contains('disabled')) window.location.href = b.href;
+        }
+        if (e.key === 'ArrowRight') {
+            const b = document.querySelector('.nav-button.next');
+            if (b && !b.classList.contains('disabled')) window.location.href = b.href;
+        }
+    });
+    </script>
+
+</body>
+</html>

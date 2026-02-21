@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📊 Bayes' Theorem — The Complete Guide</title>
+    <link rel="icon" type="image/png" href="images/favicon.png">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6; color: #1a202c;
+            background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+            min-height: 100vh; padding: 48px 24px;
+        }
+        .container {
+            max-width: 950px; margin: 0 auto;
+            background: white; border-radius: 14px;
+            box-shadow: 0 12px 48px rgba(0,0,0,0.25); overflow: hidden;
+        }
+        header {
+            background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%);
+            color: white; padding: 54px 44px; text-align: center;
+        }
+        header h1 { font-size: 2.5em; margin-bottom: 14px; font-weight: 700; }
+        header p  { font-size: 1.15em; opacity: 0.95; }
+        .toc { padding: 40px 44px; }
+        
+        .problem-link {
+            display: block; padding: 18px 22px; margin-bottom: 10px;
+            background: linear-gradient(to right, #faf5ff, #f3e8ff);
+            border-left: 4px solid #a78bfa;
+            border-radius: 8px; text-decoration: none; color: #1a202c;
+            transition: all 0.22s; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .problem-link:hover {
+            transform: translateX(10px);
+            background: linear-gradient(to right, #f3e8ff, #e9d5ff);
+            box-shadow: 0 4px 16px rgba(139,92,246,0.25);
+            border-left-width: 6px; border-left-color: #8b5cf6;
+        }
+        .problem-num   { font-size: 0.84em; color: #7c3aed; font-weight: 700; display: block; margin-bottom: 4px; }
+        .problem-title { font-size: 1.02em; font-weight: 500; color: #1a202c; }
+        .problem-diff  { font-size: 0.8em; color: #6b21a8; margin-top: 4px; display: block; font-style: italic; }
+        .stats { text-align: center; padding: 22px; background: #faf5ff; border-top: 2px solid #e9d5ff; color: #6b21a8; font-size: 0.95em; }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 Bayes' Theorem</h1>
+            <p>The Complete Guide — 10 Progressive Problems</p>
+        </header>
+        <div class="toc">
+            <a href="problem-1.html" class="problem-link">
+                <span class="problem-num">PROBLEM 1</span>
+                <span class="problem-title">Bayes: The Lying Disease Test</span>
+                <span class="problem-diff">Difficulty: VERY EASY</span>
+            </a>
+            <a href="problem-2.html" class="problem-link">
+                <span class="problem-num">PROBLEM 2</span>
+                <span class="problem-title">Multi-Hypothesis Bayes: The Broken Machine</span>
+                <span class="problem-diff">Difficulty: VERY EASY → EASY</span>
+            </a>
+            <a href="problem-3.html" class="problem-link">
+                <span class="problem-num">PROBLEM 3</span>
+                <span class="problem-title">Multiple Evidence & Conditional Independence: The Spam Detector</span>
+                <span class="problem-diff">Difficulty: EASY</span>
+            </a>
+            <a href="problem-4.html" class="problem-link">
+                <span class="problem-num">PROBLEM 4</span>
+                <span class="problem-title">N Hypotheses × M Features: Medical Differential Diagnosis</span>
+                <span class="problem-diff">Difficulty: EASY → MEDIUM</span>
+            </a>
+            <a href="problem-5.html" class="problem-link">
+                <span class="problem-num">PROBLEM 5</span>
+                <span class="problem-title">Log-Space Naive Bayes: Text Classification at Scale</span>
+                <span class="problem-diff">Difficulty: MEDIUM</span>
+            </a>
+            <a href="problem-6.html" class="problem-link">
+                <span class="problem-num">PROBLEM 6</span>
+                <span class="problem-title">Sequential Bayesian Updating: The Earthquake Detective</span>
+                <span class="problem-diff">Difficulty: MEDIUM</span>
+            </a>
+            <a href="problem-7.html" class="problem-link">
+                <span class="problem-num">PROBLEM 7</span>
+                <span class="problem-title">Continuous Bayes: Estimating the Bias of a Coin</span>
+                <span class="problem-diff">Difficulty: MEDIUM → HARD</span>
+            </a>
+            <a href="problem-8.html" class="problem-link">
+                <span class="problem-num">PROBLEM 8</span>
+                <span class="problem-title">Expected Information Gain: The Optimal Experiment</span>
+                <span class="problem-diff">Difficulty: HARD</span>
+            </a>
+            <a href="problem-9.html" class="problem-link">
+                <span class="problem-num">PROBLEM 9</span>
+                <span class="problem-title">Hierarchical Bayes: The Baseball Batting Average Problem</span>
+                <span class="problem-diff">Difficulty: HARD → VERY HARD</span>
+            </a>
+            <a href="problem-10.html" class="problem-link">
+                <span class="problem-num">PROBLEM 10</span>
+                <span class="problem-title">MCMC: The General-Purpose Bayesian Engine</span>
+                <span class="problem-diff">Difficulty: VERY HARD</span>
+            </a>
+
+        </div>
+    </div>
+</body>
+</html>
